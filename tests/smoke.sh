@@ -32,7 +32,7 @@ ok "están las 10 secciones con id"
 [ "$(count 'class="project-card"' "$TMP/home.html")" = 6 ]  || fail "deberían ser 6 proyectos"
 [ "$(count 'class="price-card[ "]' "$TMP/home.html")" = 3 ] || fail "deberían ser 3 planes"
 [ "$(count 'class="faq-item"' "$TMP/home.html")" = 7 ]      || fail "deberían ser 7 preguntas"
-[ "$(count 'class="testimonial-slide' "$TMP/home.html")" = 3 ] || fail "deberían ser 3 testimonios"
+[ "$(count 'class="testimonial-slide[ "]' "$TMP/home.html")" = 3 ] || fail "deberían ser 3 testimonios"
 grep -q 'price-card--featured' "$TMP/home.html" || fail "falta el plan destacado"
 ok "contenido del modelo renderizado (servicios, proyectos, planes, FAQ, testimonios)"
 
