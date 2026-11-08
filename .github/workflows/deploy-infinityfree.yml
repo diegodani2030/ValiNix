@@ -1,25 +1,62 @@
 name: Deploy a InfinityFree
 
-# Sube el sitio por FTP a InfinityFree cada vez que hay cambios en main.
-# También se puede lanzar a mano desde la pestaña "Actions" de GitHub.
+# - En cualquier rama o pull request: solo se ejecutan las pruebas.
+# - En main (o lanzado a mano desde "Actions"): pruebas y, si pasan, se sube por FTP a InfinityFree.
 on:
   push:
-    branches: [main]
+  pull_request:
   workflow_dispatch:
 
-concurrency:
-  group: deploy-infinityfree
-  cancel-in-progress: false
-
 jobs:
-  deploy:
+  test:
+    name: Pruebas (PHP ${{ matrix.php }})
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        php: ['7.4', '8.3']
     steps:
       - name: Descargar el código
         uses: actions/checkout@v4
 
+      - name: Instalar PHP ${{ matrix.php }}
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php }}
+          extensions: mbstring
+          coverage: none
+
       - name: Revisar sintaxis PHP
-        run: for f in $(find . -name '*.php' -not -path './.git/*'); do php -l "$f"; done
+        run: find . -name '*.php' -not -path './.git/*' -print0 | xargs -0 -n1 php -l
+
+      - name: Levantar el sitio con el servidor de PHP
+        run: |
+          php -S 127.0.0.1:8000 index.php > server.log 2>&1 &
+          for i in $(seq 1 20); do curl -s -o /dev/null http://127.0.0.1:8000/ && exit 0; sleep 0.5; done
+          echo "El servidor no arrancó"; cat server.log; exit 1
+
+      - name: Prueba de humo (páginas, rutas y formulario)
+        run: bash tests/smoke.sh http://127.0.0.1:8000
+
+      - name: Errores de PHP durante las pruebas
+        if: always()
+        run: |
+          cat server.log
+          if grep -E "PHP (Fatal|Parse|Warning|Notice|Deprecated)" server.log; then
+            echo "Se encontraron errores o avisos de PHP"; exit 1
+          fi
+
+  deploy:
+    name: Subir a InfinityFree
+    needs: test
+    if: github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
+    runs-on: ubuntu-latest
+    concurrency:
+      group: deploy-infinityfree
+      cancel-in-progress: false
+    steps:
+      - name: Descargar el código
+        uses: actions/checkout@v4
 
       - name: Subir por FTP a htdocs
         uses: SamKirkland/FTP-Deploy-Action@v4.3.5
@@ -34,3 +71,5 @@ jobs:
             **/.git*
             **/.git*/**
             .github/**
+            tests/**
+            README.md
