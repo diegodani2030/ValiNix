@@ -1063,3 +1063,7 @@ section { padding: 110px 0; position: relative; }
 @media (max-width: 480px) {
     .navbar__login { padding: 8px 12px; font-size: 0.8rem; }
 }
+
+/* Logo (monograma VN en imagen) */
+.logo-img { display: block; object-fit: contain; }
+.navbar__logo-mark .logo-img { width: 34px; height: 34px; }
