@@ -1043,3 +1043,7 @@ section { padding: 110px 0; position: relative; }
     .identidad-card { padding: 28px; }
     .manual__frame iframe { height: 70vh; }
 }
+
+/* Logo (monograma VN en imagen) */
+.logo-img { display: block; object-fit: contain; }
+.navbar__logo-mark .logo-img { width: 34px; height: 34px; }

@@ -4,7 +4,8 @@
  */
 
 return [
-    'logo' => '<svg width="28" height="28" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M4 3L4 25" stroke="var(--accent)" stroke-width="2.5" stroke-linecap="round"/><path d="M4 14L14 3" stroke="var(--accent)" stroke-width="2.5" stroke-linecap="round"/><path d="M8.5 10.5L18 25" stroke="#F2F4F8" stroke-width="2.5" stroke-linecap="round"/></svg>',
+    // Logo de ValiNix (monograma VN). Las vistas cambian width/height para mostrarlo más grande.
+    'logo' => '<img src="' . e(asset('assets/images/logo-valinix.png')) . '" width="28" height="28" alt="" class="logo-img">',
 
     'problem-x' => '<svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M4 4l16 16M20 4L4 20" stroke="#F2607A" stroke-width="1.8" stroke-linecap="round"/></svg>',
 

@@ -31,7 +31,8 @@ $metaDescription = $page['meta_description'] ?? config('meta.description');
     <meta property="og:image" content="<?= e(config('meta.og_image')) ?>">
     <meta property="og:locale" content="es_CO">
 
-    <link rel="icon" type="image/svg+xml" href="<?= e(asset('assets/icons/favicon.svg')) ?>">
+    <link rel="icon" type="image/png" href="<?= e(asset('assets/icons/favicon.png')) ?>">
+    <link rel="apple-touch-icon" href="<?= e(asset('assets/icons/favicon.png')) ?>">
 
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">

@@ -116,7 +116,7 @@ if grep -q ' selected>' "$TMP/plan-bad.html"; then fail "un ?plan inválido no d
 ok "contacto: formulario con CSRF y preselección de plan desde /precios"
 
 # --- Archivos estáticos ---------------------------------------------------------
-for f in css/style.css js/script.js assets/icons/favicon.svg; do
+for f in css/style.css js/script.js assets/icons/favicon.png; do
     [ "$(status "$BASE/$f")" = 200 ] || fail "$f no carga"
 done
 curl -s -o "$TMP/style.css" "$BASE/css/style.css"
