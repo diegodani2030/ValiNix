@@ -1,4 +1,5 @@
 <?php /** @var array<int, array<string, mixed>> $testimonials */ ?>
+<?php if ($testimonials !== []): ?>
     <section class="testimonials" id="testimonios">
         <div class="container">
             <div class="section-head">
@@ -26,4 +27,4 @@
             </div>
         </div>
     </section>
-
+<?php endif; ?>

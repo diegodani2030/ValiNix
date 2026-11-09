@@ -15,6 +15,22 @@ jobs:
       fail-fast: false
       matrix:
         php: ['7.4', '8.3']
+
+    # Base de datos MySQL de pruebas (se borra al terminar).
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_DATABASE: valinix_test
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -proot"
+          --health-interval=5s
+          --health-timeout=5s
+          --health-retries=20
+
     steps:
       - name: Descargar el código
         uses: actions/checkout@v4
@@ -23,26 +39,43 @@ jobs:
         uses: shivammathur/setup-php@v2
         with:
           php-version: ${{ matrix.php }}
-          extensions: mbstring
+          extensions: mbstring, pdo_mysql
           coverage: none
 
       - name: Revisar sintaxis PHP
         run: find . -name '*.php' -not -path './.git/*' -print0 | xargs -0 -n1 php -l
 
-      - name: Levantar el sitio con el servidor de PHP
+      - name: Crear las tablas y probar las consultas SQL
         run: |
-          php -S 127.0.0.1:8000 index.php > server.log 2>&1 &
-          for i in $(seq 1 20); do curl -s -o /dev/null http://127.0.0.1:8000/ && exit 0; sleep 0.5; done
-          echo "El servidor no arrancó"; cat server.log; exit 1
+          mysql -h 127.0.0.1 -uroot -proot valinix_test < database/valinix.sql
+          mysql -h 127.0.0.1 -uroot -proot valinix_test -e "SHOW TABLES; SELECT COUNT(*) AS proyectos FROM proyectos;"
+          # consultas.sql tiene INSERT/UPDATE/DELETE de ejemplo: se prueba en una copia para no tocar los datos.
+          mysql -h 127.0.0.1 -uroot -proot -e "CREATE DATABASE valinix_consultas CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
+          mysql -h 127.0.0.1 -uroot -proot valinix_consultas < database/valinix.sql
+          mysql -h 127.0.0.1 -uroot -proot valinix_consultas < database/consultas.sql > /dev/null
 
-      - name: Prueba de humo (páginas, rutas y formulario)
-        run: bash tests/smoke.sh http://127.0.0.1:8000
+      - name: Levantar el sitio (8000 con base de datos, 8001 sin base de datos)
+        run: |
+          DB_HOST=127.0.0.1 DB_NAME=valinix_test DB_USER=root DB_PASSWORD=root \
+            php -S 127.0.0.1:8000 index.php > server.log 2>&1 &
+          php -S 127.0.0.1:8001 index.php > server-nodb.log 2>&1 &
+          for port in 8000 8001; do
+            for i in $(seq 1 20); do curl -s -o /dev/null http://127.0.0.1:$port/ && break; sleep 0.5; done
+          done
+          curl -sf -o /dev/null http://127.0.0.1:8000/ && curl -sf -o /dev/null http://127.0.0.1:8001/ && exit 0
+          echo "El servidor no arrancó"; cat server.log server-nodb.log; exit 1
+
+      - name: Prueba de humo con base de datos (páginas, formulario, login, permisos y CRUD)
+        run: bash tests/smoke.sh http://127.0.0.1:8000 db
+
+      - name: Prueba de humo sin base de datos (contenido de respaldo)
+        run: bash tests/smoke.sh http://127.0.0.1:8001 nodb
 
       - name: Errores de PHP durante las pruebas
         if: always()
         run: |
-          cat server.log
-          if grep -E "PHP (Fatal|Parse|Warning|Notice|Deprecated)" server.log; then
+          cat server.log server-nodb.log
+          if grep -E "PHP (Fatal|Parse|Warning|Notice|Deprecated)" server.log server-nodb.log; then
             echo "Se encontraron errores o avisos de PHP"; exit 1
           fi
 
@@ -58,6 +91,25 @@ jobs:
       - name: Descargar el código
         uses: actions/checkout@v4
 
+      # Crea config/database.local.php con los secretos DB_* (nunca queda en el repositorio).
+      # Si faltan los secretos, el sitio se publica igual: funciona sin panel (contenido de respaldo).
+      - name: Configurar la conexión a MySQL
+        env:
+          DB_HOST: ${{ secrets.DB_HOST }}
+          DB_NAME: ${{ secrets.DB_NAME }}
+          DB_USER: ${{ secrets.DB_USER }}
+          DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+        run: |
+          if [ -z "$DB_HOST" ] || [ -z "$DB_NAME" ] || [ -z "$DB_USER" ]; then
+            echo "::warning::Faltan los secretos DB_HOST, DB_NAME, DB_USER o DB_PASSWORD: el sitio se publica sin panel administrativo."
+            exit 0
+          fi
+          php -r 'file_put_contents("config/database.local.php", "<?php\nreturn " . var_export([
+              "host" => getenv("DB_HOST"), "port" => 3306, "name" => getenv("DB_NAME"),
+              "user" => getenv("DB_USER"), "password" => (string) getenv("DB_PASSWORD"),
+          ], true) . ";\n");'
+          php -l config/database.local.php
+
       - name: Subir por FTP a htdocs
         uses: SamKirkland/FTP-Deploy-Action@v4.3.5
         with:
@@ -72,4 +124,5 @@ jobs:
             **/.git*/**
             .github/**
             tests/**
+            database/**
             README.md

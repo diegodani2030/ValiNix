@@ -5,11 +5,11 @@ declare(strict_types=1);
 namespace App\Models;
 
 /**
- * Contenido de la landing page: servicios, proyectos, planes, testimonios, FAQ...
+ * Contenido fijo del sitio: páginas del menú, misión/visión, textos de la home...
  *
- * Para cambiar textos o agregar elementos, edita estos arreglos; las vistas
- * los recorren automáticamente. Si algún día se usa una base de datos,
- * solo cambia este modelo y las vistas siguen igual.
+ * Lo que se administra desde el panel (servicios, proyectos, testimonios) y lo
+ * que viene de la base de datos (planes, FAQ) se lee con el modelo Contenido;
+ * aquí solo queda su copia de respaldo.
  */
 final class SiteContent
 {
@@ -197,16 +197,23 @@ final class SiteContent
         ];
     }
 
-    /** @return array<int, array<string, string>> */
+    /*
+     * Contenido de RESPALDO: servicios, proyectos, planes, testimonios y FAQ
+     * viven en la base de datos (ver database/valinix.sql y el modelo Contenido).
+     * Estos arreglos solo se muestran si la base de datos no está disponible,
+     * por eso tienen los mismos datos iniciales que el archivo SQL.
+     */
+
+    /** @return array<int, array<string, mixed>> */
     public static function services(): array
     {
         return [
-            ['icon' => 'service-web',       'title' => 'Diseño web',               'text' => 'Sitios modernos y profesionales adaptados a la identidad de cada empresa.'],
-            ['icon' => 'service-landing',   'title' => 'Landing pages',            'text' => 'Páginas enfocadas en un solo objetivo: convertir visitantes en clientes.'],
-            ['icon' => 'service-business',  'title' => 'Sitios empresariales',     'text' => 'Presencia digital completa para empresas y organizaciones.'],
-            ['icon' => 'service-catalog',   'title' => 'Catálogos digitales',      'text' => 'Presenta tus productos y servicios de forma clara y profesional.'],
-            ['icon' => 'whatsapp-outline',  'title' => 'Integración con WhatsApp', 'text' => 'Facilitamos que tus visitantes te contacten directamente desde la web.'],
-            ['icon' => 'service-seo',       'title' => 'SEO y rendimiento',        'text' => 'Optimizamos velocidad, estructura y posicionamiento en buscadores.'],
+            ['id' => 1, 'icon' => 'service-web',      'title' => 'Desarrollo web',           'text' => 'Creación de páginas y aplicaciones web modernas, adaptadas a la identidad de cada empresa.'],
+            ['id' => 2, 'icon' => 'service-catalog',  'title' => 'Sistemas de información',  'text' => 'Soluciones para gestionar datos: inventarios, ventas, clientes y reportes en un solo lugar.'],
+            ['id' => 3, 'icon' => 'service-shield',   'title' => 'Seguridad informática',    'text' => 'Protección de tu información: accesos con contraseña, copias de seguridad y buenas prácticas.'],
+            ['id' => 4, 'icon' => 'service-support',  'title' => 'Soporte y mantenimiento',  'text' => 'Ayuda técnica continua: actualizaciones, cambios de contenido y resolución de fallas.'],
+            ['id' => 5, 'icon' => 'service-landing',  'title' => 'Landing pages',            'text' => 'Páginas enfocadas en un solo objetivo: convertir visitantes en clientes.'],
+            ['id' => 6, 'icon' => 'whatsapp-outline', 'title' => 'Integración con WhatsApp', 'text' => 'Facilitamos que tus visitantes te contacten directamente desde la web.'],
         ];
     }
 
@@ -243,6 +250,8 @@ final class SiteContent
     {
         return [
             'all'         => 'Todos',
+            'gastronomia' => 'Gastronomía',
+            'social'      => 'Emprendimiento social',
             'landing'     => 'Landing Pages',
             'empresarial' => 'Empresariales',
             'ecommerce'   => 'E-commerce',
@@ -254,12 +263,12 @@ final class SiteContent
     public static function projects(): array
     {
         return [
-            ['thumb' => 1, 'category' => 'landing',     'tag' => 'Landing Page',      'title' => 'Nova Studio',           'text' => 'Landing page para estudio de diseño de interiores enfocada en agendar visitas.', 'url' => '#'],
-            ['thumb' => 2, 'category' => 'empresarial', 'tag' => 'Sitio Empresarial', 'title' => 'Andes Ingeniería',      'text' => 'Sitio corporativo con portafolio de proyectos y sección institucional completa.', 'url' => '#'],
-            ['thumb' => 3, 'category' => 'ecommerce',   'tag' => 'E-commerce',        'title' => 'Verde Botánica',        'text' => 'Tienda en línea de plantas y accesorios con carrito de compras integrado.', 'url' => '#'],
-            ['thumb' => 4, 'category' => 'catalogo',    'tag' => 'Catálogo Digital',  'title' => 'Muebles del Valle',     'text' => 'Catálogo digital de mobiliario con fichas técnicas y contacto directo por WhatsApp.', 'url' => '#'],
-            ['thumb' => 5, 'category' => 'landing',     'tag' => 'Landing Page',      'title' => 'Black Gold Barbershop', 'text' => 'Landing page para barbería con reservas simplificadas por WhatsApp.', 'url' => '#'],
-            ['thumb' => 6, 'category' => 'empresarial', 'tag' => 'Sitio Empresarial', 'title' => 'Pedraza Manufacturas',  'text' => 'Sitio institucional para fabricante de productos de identificación plástica.', 'url' => '#'],
+            ['thumb' => 4, 'category' => 'gastronomia', 'tag' => 'Gastronomía',           'title' => 'Raíces del Fogón',    'text' => 'Sistema de información para la gestión de ventas e inventarios de un establecimiento gastronómico.', 'url' => 'https://raicesfogon.free.je'],
+            ['thumb' => 5, 'category' => 'social',      'tag' => 'Emprendimiento social', 'title' => 'Rincón Tinto Animal', 'text' => 'Sitio para un café con enfoque en la adopción responsable de animales.', 'url' => '#'],
+            ['thumb' => 1, 'category' => 'landing',     'tag' => 'Landing Pages',         'title' => 'Nova Studio',         'text' => 'Landing page para estudio de diseño de interiores enfocada en agendar visitas.', 'url' => '#'],
+            ['thumb' => 2, 'category' => 'empresarial', 'tag' => 'Empresariales',         'title' => 'Andes Ingeniería',    'text' => 'Sitio corporativo con portafolio de proyectos y sección institucional completa.', 'url' => '#'],
+            ['thumb' => 3, 'category' => 'ecommerce',   'tag' => 'E-commerce',            'title' => 'Verde Botánica',      'text' => 'Tienda en línea de plantas y accesorios con carrito de compras integrado.', 'url' => '#'],
+            ['thumb' => 6, 'category' => 'catalogo',    'tag' => 'Catálogos',             'title' => 'Muebles del Valle',   'text' => 'Catálogo digital de mobiliario con fichas técnicas y contacto directo por WhatsApp.', 'url' => '#'],
         ];
     }
 
@@ -268,7 +277,7 @@ final class SiteContent
     {
         return [
             [
-                'key'      => 'basico', // coincide con budgetRanges(): preselecciona el presupuesto en /contacto
+                'key'      => 'basico', // /contacto?plan=basico preselecciona el plan
                 'name'     => 'Plan Básico',
                 'desc'     => 'Para emprendedores que necesitan comenzar su presencia digital.',
                 'price'    => '$XXX.XXX',
@@ -282,7 +291,7 @@ final class SiteContent
                 ],
             ],
             [
-                'key'      => 'profesional', // coincide con budgetRanges(): preselecciona el presupuesto en /contacto
+                'key'      => 'profesional',
                 'name'     => 'Plan Profesional',
                 'desc'     => 'Para empresas que necesitan una página más completa.',
                 'price'    => '$XXX.XXX',
@@ -298,7 +307,7 @@ final class SiteContent
                 ],
             ],
             [
-                'key'      => 'premium', // coincide con budgetRanges(): preselecciona el presupuesto en /contacto
+                'key'      => 'premium',
                 'name'     => 'Plan Premium',
                 'desc'     => 'Para empresas que buscan una presencia digital avanzada.',
                 'price'    => '$XXX.XXX',
@@ -336,30 +345,6 @@ final class SiteContent
             ['q' => '¿Puedo conectar WhatsApp?', 'a' => 'Sí, la integración con WhatsApp está disponible desde el Plan Básico mediante un botón directo de contacto.'],
             ['q' => '¿La página queda optimizada para Google?', 'a' => 'Sí, aplicamos buenas prácticas de SEO básico: metadatos, estructura semántica y velocidad de carga.'],
             ['q' => '¿Ofrecen mantenimiento?', 'a' => 'Sí, contamos con planes de mantenimiento para actualizaciones, cambios de contenido y soporte continuo.'],
-        ];
-    }
-
-    /** Opciones del campo "Tipo de proyecto": valor => etiqueta. @return array<string, string> */
-    public static function projectTypes(): array
-    {
-        return [
-            'landing'     => 'Landing page',
-            'empresarial' => 'Sitio empresarial',
-            'catalogo'    => 'Catálogo digital',
-            'ecommerce'   => 'E-commerce',
-            'otro'        => 'Otro',
-        ];
-    }
-
-    /** Opciones del campo "Presupuesto aproximado": valor => etiqueta. @return array<string, string> */
-    public static function budgetRanges(): array
-    {
-        return [
-            ''            => 'Selecciona un rango',
-            'basico'      => 'Rango plan básico',
-            'profesional' => 'Rango plan profesional',
-            'premium'     => 'Rango plan premium',
-            'no-seguro'   => 'Aún no lo sé',
         ];
     }
 }

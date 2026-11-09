@@ -20,6 +20,26 @@ return [
         'og_image'       => '/assets/images/og-cover.jpg',
     ],
 
+    /*
+     * Base de datos MySQL. Los datos reales NO se escriben aquí:
+     *  - En InfinityFree, el deploy crea config/database.local.php con los
+     *    secretos DB_HOST, DB_NAME, DB_USER y DB_PASSWORD de GitHub.
+     *  - En local, crea tú mismo config/database.local.php (ver database.example.php)
+     *    o define las variables de entorno DB_HOST, DB_NAME, DB_USER, DB_PASSWORD.
+     * Si no hay base de datos, las páginas públicas siguen funcionando con el
+     * contenido de respaldo de SiteContent, pero el panel no se puede usar.
+     */
+    'db' => array_merge(
+        [
+            'host'     => (string) getenv('DB_HOST'),
+            'port'     => (int) (getenv('DB_PORT') ?: 3306),
+            'name'     => (string) getenv('DB_NAME'),
+            'user'     => (string) getenv('DB_USER'),
+            'password' => (string) getenv('DB_PASSWORD'),
+        ],
+        is_file(__DIR__ . '/database.local.php') ? (array) require __DIR__ . '/database.local.php' : []
+    ),
+
     'contact' => [
         'email'            => 'hola@valinix.software',      // a dónde llegan las solicitudes
         'from'             => 'no-reply@valinix.software',  // remitente de los correos

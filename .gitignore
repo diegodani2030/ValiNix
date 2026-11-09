@@ -1,0 +1,5 @@
+# Datos de conexión reales a la base de datos (nunca se suben a GitHub)
+config/database.local.php
+
+# Archivos del servidor de pruebas local
+server.log

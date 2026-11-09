@@ -67,3 +67,25 @@ function icon(string $name): string
 
     return $icons[$name] ?? '';
 }
+
+/** Mensaje de error de un campo del formulario (vacío si no tiene error). @param array<string, string> $errors */
+function field_error(array $errors, string $field): string
+{
+    if (!isset($errors[$field])) {
+        return '';
+    }
+
+    return '<span class="field-error" id="error-' . e($field) . '">' . e($errors[$field]) . '</span>';
+}
+
+/** Atributos para marcar un campo con error (lectores de pantalla y estilos). @param array<string, string> $errors */
+function invalid_attr(array $errors, string $field): string
+{
+    return isset($errors[$field]) ? ' aria-invalid="true" aria-describedby="error-' . e($field) . '"' : '';
+}
+
+/** Campo oculto con el token CSRF para los formularios POST. */
+function csrf_field(): string
+{
+    return '<input type="hidden" name="_token" value="' . e(\App\Core\Session::csrfToken()) . '">';
+}

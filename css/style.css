@@ -1043,3 +1043,23 @@ section { padding: 110px 0; position: relative; }
     .identidad-card { padding: 28px; }
     .manual__frame iframe { height: 70vh; }
 }
+
+/* =========================================================
+   Inicio de sesión
+   ========================================================= */
+.navbar__login, .navbar__list a { white-space: nowrap; }
+.login { padding-top: 0; }
+.login__card { max-width: 460px; margin: 0 auto; }
+.login__help { margin-top: 16px; color: var(--text-faint); font-size: 0.84rem; text-align: center; line-height: 1.6; }
+
+@media (max-width: 1280px) and (min-width: 1101px) {
+    .navbar__list { gap: 22px; }
+    .navbar__actions { gap: 10px; }
+}
+/* Entre 1101 y 1240 px no caben los dos botones: queda "Iniciar sesión" (la cotización sigue en el menú: Contacto). */
+@media (max-width: 1240px) {
+    .navbar__cta { display: none; }
+}
+@media (max-width: 480px) {
+    .navbar__login { padding: 8px 12px; font-size: 0.8rem; }
+}

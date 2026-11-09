@@ -290,6 +290,7 @@
                 var re = /^[0-9+\s\-()]{7,20}$/;
                 return re.test(v.trim()) ? '' : 'Ingresa un teléfono válido.';
             },
+            asunto: function (v) { return v.trim().length >= 3 ? '' : 'El campo Asunto es obligatorio (mín. 3 caracteres).'; },
             mensaje: function (v) { return v.trim().length >= 10 ? '' : 'Cuéntanos un poco más (mín. 10 caracteres).'; }
         };
 

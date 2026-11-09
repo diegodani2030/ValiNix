@@ -13,7 +13,7 @@ declare(strict_types=1);
 // deja que sirva directamente los archivos estáticos que existan.
 if (PHP_SAPI === 'cli-server') {
     $requestPath = (string) parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH);
-    $isPrivate   = (bool) preg_match('#^/(app|config)(/|$)#', $requestPath);
+    $isPrivate   = (bool) preg_match('#^/(app|config|database|tests)(/|$)#', $requestPath);
     if (!$isPrivate && $requestPath !== '/' && is_file(__DIR__ . $requestPath)) {
         return false;
     }

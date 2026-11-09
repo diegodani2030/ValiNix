@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Controllers;
 
 use App\Core\Controller;
+use App\Models\Contenido;
 use App\Models\SiteContent;
 
 /**
@@ -19,7 +20,7 @@ final class PageController extends Controller
             'stats'        => SiteContent::stats(),
             'problems'     => SiteContent::problems(),
             'explore'      => SiteContent::explorePages(),
-            'testimonials' => SiteContent::testimonials(),
+            'testimonials' => Contenido::testimonials(),
         ]);
     }
 
@@ -41,7 +42,7 @@ final class PageController extends Controller
     public function services(): void
     {
         $this->page('servicios', 'pages/services', [
-            'services' => SiteContent::services(),
+            'services' => Contenido::services(),
             'benefits' => SiteContent::benefits(),
         ]);
     }
@@ -58,8 +59,8 @@ final class PageController extends Controller
     public function projects(): void
     {
         $this->page('proyectos', 'pages/projects', [
-            'projectFilters' => SiteContent::projectFilters(),
-            'projects'       => SiteContent::projects(),
+            'projectFilters' => Contenido::projectFilters(),
+            'projects'       => Contenido::projects(),
         ]);
     }
 
@@ -67,7 +68,7 @@ final class PageController extends Controller
     public function pricing(): void
     {
         $this->page('precios', 'pages/pricing', [
-            'plans' => SiteContent::plans(),
+            'plans' => Contenido::plans(),
         ]);
     }
 
@@ -75,7 +76,7 @@ final class PageController extends Controller
     public function faq(): void
     {
         $this->page('faq', 'pages/faq', [
-            'faqs' => SiteContent::faqs(),
+            'faqs' => Contenido::faqs(),
         ]);
     }
 

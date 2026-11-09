@@ -1,8 +1,8 @@
 <?php
 /**
  * @var array{status: ?string, message: ?string, old: array<string, string>, token: string} $form
- * @var array<string, string> $projectTypes
- * @var array<string, string> $budgetRanges
+ * @var array<int, string>    $serviceOptions Servicios (id => título), de la tabla servicios.
+ * @var array<string, string> $planOptions    Planes (clave => nombre), de la tabla planes.
  */
 
 $old = is_array($form['old']) ? $form['old'] : [];
@@ -53,42 +53,49 @@ $val = static function (string $field) use ($old): string {
                 <div class="form-row">
                     <div class="form-group">
                         <label for="nombre">Nombre *</label>
-                        <input type="text" id="nombre" name="nombre" required minlength="2" value="<?= $val('nombre') ?>">
+                        <input type="text" id="nombre" name="nombre" required minlength="2" maxlength="100" value="<?= $val('nombre') ?>">
                         <span class="form-error" data-error-for="nombre"></span>
                     </div>
                     <div class="form-group">
                         <label for="empresa">Empresa</label>
-                        <input type="text" id="empresa" name="empresa" value="<?= $val('empresa') ?>">
+                        <input type="text" id="empresa" name="empresa" maxlength="120" value="<?= $val('empresa') ?>">
                     </div>
                 </div>
 
                 <div class="form-row">
                     <div class="form-group">
                         <label for="correo">Correo electrónico *</label>
-                        <input type="email" id="correo" name="correo" required value="<?= $val('correo') ?>">
+                        <input type="email" id="correo" name="correo" required maxlength="150" value="<?= $val('correo') ?>">
                         <span class="form-error" data-error-for="correo"></span>
                     </div>
                     <div class="form-group">
                         <label for="telefono">Teléfono *</label>
-                        <input type="tel" id="telefono" name="telefono" required value="<?= $val('telefono') ?>">
+                        <input type="tel" id="telefono" name="telefono" required maxlength="20" value="<?= $val('telefono') ?>">
                         <span class="form-error" data-error-for="telefono"></span>
                     </div>
                 </div>
 
+                <div class="form-group">
+                    <label for="asunto">Asunto *</label>
+                    <input type="text" id="asunto" name="asunto" required minlength="3" maxlength="150" value="<?= $val('asunto') ?>">
+                    <span class="form-error" data-error-for="asunto"></span>
+                </div>
+
                 <div class="form-row">
                     <div class="form-group">
-                        <label for="tipo_proyecto">Tipo de proyecto</label>
-                        <select id="tipo_proyecto" name="tipo_proyecto">
-<?php foreach ($projectTypes as $value => $label): ?>
-                            <option value="<?= e($value) ?>"<?= ($old['tipo_proyecto'] ?? null) === $value ? ' selected' : '' ?>><?= e($label) ?></option>
+                        <label for="servicio">Servicio de interés</label>
+                        <select id="servicio" name="servicio">
+                            <option value="">Selecciona un servicio</option>
+<?php foreach ($serviceOptions as $value => $label): ?>
+                            <option value="<?= (int) $value ?>"<?= ($old['servicio'] ?? null) === (string) $value ? ' selected' : '' ?>><?= e($label) ?></option>
 <?php endforeach; ?>
                         </select>
                     </div>
                     <div class="form-group">
-                        <label for="presupuesto">Presupuesto aproximado</label>
-                        <select id="presupuesto" name="presupuesto">
-<?php foreach ($budgetRanges as $value => $label): ?>
-                            <option value="<?= e($value) ?>"<?= ($old['presupuesto'] ?? null) === (string) $value ? ' selected' : '' ?>><?= e($label) ?></option>
+                        <label for="plan">Plan de interés</label>
+                        <select id="plan" name="plan">
+<?php foreach ($planOptions as $value => $label): ?>
+                            <option value="<?= e($value) ?>"<?= ($old['plan'] ?? null) === (string) $value ? ' selected' : '' ?>><?= e($label) ?></option>
 <?php endforeach; ?>
                         </select>
                     </div>
@@ -96,7 +103,7 @@ $val = static function (string $field) use ($old): string {
 
                 <div class="form-group">
                     <label for="mensaje">Mensaje *</label>
-                    <textarea id="mensaje" name="mensaje" rows="4" required minlength="10"><?= $val('mensaje') ?></textarea>
+                    <textarea id="mensaje" name="mensaje" rows="4" required minlength="10" maxlength="3000"><?= $val('mensaje') ?></textarea>
                     <span class="form-error" data-error-for="mensaje"></span>
                 </div>
 

@@ -5,8 +5,8 @@ DirectoryIndex index.php
 <IfModule mod_rewrite.c>
     RewriteEngine On
 
-    # El código de la aplicación y la configuración nunca se sirven directamente.
-    RewriteRule ^(app|config)(/|$) - [F,L]
+    # El código, la configuración y los archivos SQL nunca se sirven directamente.
+    RewriteRule ^(app|config|database|tests)(/|$) - [F,L]
 
     # Archivos ocultos (.git, .env, estado del deploy...), excepto .well-known.
     RewriteRule (^|/)\.(?!well-known/) - [F,L]

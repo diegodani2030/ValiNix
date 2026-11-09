@@ -2,7 +2,7 @@
 /** @var array<string, array<string, string>> $allPages Todas las páginas del sitio (SiteContent::pages()). */
 
 $quickLinks   = array_intersect_key($allPages, array_flip(['inicio', 'nosotros', 'servicios', 'proyectos', 'precios', 'faq', 'manual']));
-$serviceLinks = ['Diseño web', 'Landing pages', 'Sitios empresariales', 'Catálogos digitales', 'SEO y rendimiento'];
+$serviceLinks = array_slice(array_values(\App\Models\Contenido::serviceOptions()), 0, 5); // de la tabla servicios
 ?>
 <footer class="footer">
     <div class="container footer__inner">
