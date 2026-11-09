@@ -43,8 +43,8 @@ return [
     'contact' => [
         'email'            => 'hola@valinix.software',      // a dónde llegan las solicitudes
         'from'             => 'no-reply@valinix.software',  // remitente de los correos
-        'whatsapp_number'  => '573000000000',               // solo dígitos, con indicativo
-        'whatsapp_display' => '+57 300 000 0000',
+        'whatsapp_number'  => '573114968558',               // solo dígitos, con indicativo (el del manual)
+        'whatsapp_display' => '+57 311 496 8558',
         'hours'            => 'Lunes a viernes · 8:00 a.m. – 6:00 p.m.',
         'hours_short'      => 'Lun – Vie · 8:00 a.m. – 6:00 p.m.',
     ],
