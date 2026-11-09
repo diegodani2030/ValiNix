@@ -92,7 +92,9 @@ for f in css/style.css js/script.js assets/icons/favicon.svg; do
 done
 curl -s -o "$TMP/style.css" "$BASE/css/style.css"
 grep -q '\.page-header' "$TMP/style.css" || fail "style.css no tiene los estilos de páginas internas"
-ok "css, js y favicon cargan"
+grep -qE 'href="/css/style\.css\?v=[0-9]+"' "$P" || fail "style.css no lleva ?v= para evitar la caché vieja"
+grep -qE 'src="/js/script\.js\?v=[0-9]+"' "$P" || fail "script.js no lleva ?v= para evitar la caché vieja"
+ok "css, js y favicon cargan, con versión para evitar caché vieja"
 
 # --- Errores y rutas privadas ---------------------------------------------------
 [ "$(status "$BASE/no-existe")" = 404 ] || fail "/no-existe debería ser 404"

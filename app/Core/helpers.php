@@ -38,10 +38,16 @@ function url(string $path = ''): string
     return base_url() . '/' . ltrim($path, '/');
 }
 
-/** URL de un archivo estático: asset('css/style.css') -> /css/style.css */
+/**
+ * URL de un archivo estático con su versión: asset('css/style.css') -> /css/style.css?v=1731110000
+ * La versión es la fecha de modificación del archivo, así el navegador
+ * descarga la versión nueva cada vez que cambia (y usa la caché mientras no cambie).
+ */
 function asset(string $path): string
 {
-    return url($path);
+    $file = BASE_PATH . '/' . ltrim($path, '/');
+
+    return url($path) . (is_file($file) ? '?v=' . filemtime($file) : '');
 }
 
 /** Enlace de WhatsApp con el número configurado. */
