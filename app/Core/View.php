@@ -11,12 +11,22 @@ use RuntimeException;
  */
 final class View
 {
+    /** @var array<string, mixed> Variables disponibles en todas las vistas (ej. el menú). */
+    private static $shared = [];
+
+    /** @param mixed $value */
+    public static function share(string $key, $value): void
+    {
+        self::$shared[$key] = $value;
+    }
+
     /**
      * @param array<string, mixed> $data Variables disponibles en la vista.
      * @param string|null $layout Layout que envuelve la vista (null = sin layout).
      */
     public static function render(string $view, array $data = [], ?string $layout = 'layouts/main'): string
     {
+        $data    = array_merge(self::$shared, $data);
         $content = self::capture($view, $data);
 
         if ($layout === null) {

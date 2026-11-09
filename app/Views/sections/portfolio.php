@@ -6,11 +6,6 @@
 ?>
     <section class="portfolio" id="proyectos">
         <div class="container">
-            <div class="section-head">
-                <span class="eyebrow">Proyectos</span>
-                <h2 class="section-title">Algunos ejemplos de nuestro trabajo.</h2>
-            </div>
-
             <div class="portfolio__filters" role="tablist" aria-label="Filtrar proyectos">
 <?php foreach ($projectFilters as $value => $label): ?>
                 <button class="filter-btn<?= $value === 'all' ? ' is-active' : '' ?>" data-filter="<?= e($value) ?>"><?= e($label) ?></button>

@@ -13,9 +13,8 @@ $val = static function (string $field) use ($old): string {
     <section class="contact" id="contacto">
         <div class="container contact__inner">
             <div class="contact__info reveal">
-                <span class="eyebrow">Hablemos</span>
-                <h2 class="section-title">Cuéntanos sobre tu proyecto</h2>
-                <p class="contact__lead">Completa el formulario y te responderemos a la brevedad, o escríbenos directamente por WhatsApp.</p>
+                <span class="eyebrow">Otros canales</span>
+                <p class="contact__lead">¿Prefieres hablar directamente? Escríbenos por WhatsApp o al correo, en nuestro horario de atención.</p>
 
                 <ul class="contact__details">
                     <li>

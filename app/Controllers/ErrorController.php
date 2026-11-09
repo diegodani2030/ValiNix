@@ -26,9 +26,11 @@ final class ErrorController extends Controller
     private function errorPage(int $status): void
     {
         $this->view('errors/404', [
-            'pageTitle' => 'Página no encontrada — ' . config('app.name', 'ValiNix'),
-            'navBase'   => url('/'),
-            'noindex'   => true,
+            'page' => [
+                'key'        => 'error',
+                'meta_title' => 'Página no encontrada — ' . config('app.name', 'ValiNix'),
+            ],
+            'noindex' => true,
         ], $status);
     }
 }

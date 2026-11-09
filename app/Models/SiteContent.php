@@ -13,6 +13,114 @@ namespace App\Models;
  */
 final class SiteContent
 {
+    /**
+     * Páginas del sitio, en el orden del menú.
+     * - path: URL de la página (debe coincidir con app/routes.php)
+     * - eyebrow / heading / lead: encabezado que se muestra arriba de la página
+     * - summary / icon / cta: tarjeta de la página en la sección "Explora" de la home
+     *
+     * @return array<string, array<string, string>>
+     */
+    public static function pages(): array
+    {
+        return [
+            'inicio' => [
+                'path'             => '/',
+                'nav'              => 'Inicio',
+                'meta_title'       => 'ValiNix — Diseño y desarrollo web para empresas y emprendedores',
+                'meta_description' => 'En ValiNix creamos páginas web modernas, rápidas y enfocadas en resultados: landing pages, sitios empresariales y catálogos digitales con integración a WhatsApp.',
+            ],
+            'servicios' => [
+                'path'             => '/servicios',
+                'nav'              => 'Servicios',
+                'eyebrow'          => 'Lo que hacemos',
+                'heading'          => 'Servicios diseñados para cada etapa de tu negocio.',
+                'lead'             => 'Desde una landing page para empezar a vender hasta un sitio empresarial completo: elige lo que tu negocio necesita hoy.',
+                'summary'          => 'Diseño web, landing pages, catálogos, WhatsApp y SEO.',
+                'icon'             => 'service-web',
+                'cta'              => 'Ver servicios',
+                'meta_title'       => 'Servicios — ValiNix',
+                'meta_description' => 'Diseño web, landing pages, sitios empresariales, catálogos digitales, integración con WhatsApp y SEO para tu negocio.',
+            ],
+            'proceso' => [
+                'path'             => '/proceso',
+                'nav'              => 'Proceso',
+                'eyebrow'          => 'Cómo trabajamos',
+                'heading'          => 'Un proceso claro, de principio a fin.',
+                'lead'             => 'Cinco pasos para pasar de la idea a una página publicada, sin sorpresas y con comunicación en cada etapa.',
+                'summary'          => 'Cinco pasos claros, de tu idea a la página publicada.',
+                'icon'             => 'service-business',
+                'cta'              => 'Ver el proceso',
+                'meta_title'       => 'Cómo trabajamos — ValiNix',
+                'meta_description' => 'Conoce nuestro proceso de diseño y desarrollo web en cinco pasos: idea, análisis, diseño, desarrollo y publicación.',
+            ],
+            'proyectos' => [
+                'path'             => '/proyectos',
+                'nav'              => 'Proyectos',
+                'eyebrow'          => 'Proyectos',
+                'heading'          => 'Algunos ejemplos de nuestro trabajo.',
+                'lead'             => 'Landing pages, sitios empresariales, tiendas y catálogos que hemos creado. Filtra por tipo de proyecto.',
+                'summary'          => 'Landing pages, sitios empresariales, tiendas y catálogos.',
+                'icon'             => 'service-catalog',
+                'cta'              => 'Ver proyectos',
+                'meta_title'       => 'Proyectos — ValiNix',
+                'meta_description' => 'Portafolio de ValiNix: landing pages, sitios empresariales, e-commerce y catálogos digitales.',
+            ],
+            'precios' => [
+                'path'             => '/precios',
+                'nav'              => 'Precios',
+                'eyebrow'          => 'Planes',
+                'heading'          => 'Un plan para cada etapa de tu negocio.',
+                'lead'             => 'Planes pensados para emprendedores y empresas. Solicita tu cotización y te ayudamos a elegir el adecuado.',
+                'summary'          => 'Planes Básico, Profesional y Premium.',
+                'icon'             => 'service-seo',
+                'cta'              => 'Ver planes',
+                'meta_title'       => 'Precios y planes — ValiNix',
+                'meta_description' => 'Planes de diseño web Básico, Profesional y Premium para emprendedores y empresas.',
+            ],
+            'faq' => [
+                'path'             => '/preguntas-frecuentes',
+                'nav'              => 'Preguntas frecuentes',
+                'eyebrow'          => 'Dudas frecuentes',
+                'heading'          => 'Preguntas frecuentes',
+                'lead'             => 'Tiempos, dominio, hosting, WhatsApp, mantenimiento… Aquí respondemos lo que más nos preguntan.',
+                'summary'          => 'Tiempos de entrega, hosting, WhatsApp y mantenimiento.',
+                'icon'             => 'service-landing',
+                'cta'              => 'Ver respuestas',
+                'meta_title'       => 'Preguntas frecuentes — ValiNix',
+                'meta_description' => 'Respuestas sobre tiempos de entrega, dominio, hosting, WhatsApp, SEO y mantenimiento de tu página web.',
+            ],
+            'contacto' => [
+                'path'             => '/contacto',
+                'nav'              => 'Contacto',
+                'eyebrow'          => 'Hablemos',
+                'heading'          => 'Cuéntanos sobre tu proyecto',
+                'lead'             => 'Completa el formulario y te responderemos a la brevedad, o escríbenos directamente por WhatsApp.',
+                'summary'          => 'Pide tu cotización o escríbenos por WhatsApp.',
+                'icon'             => 'whatsapp-outline',
+                'cta'              => 'Escríbenos',
+                'meta_title'       => 'Contacto — ValiNix',
+                'meta_description' => 'Solicita una cotización para tu página web. Escríbenos por el formulario o por WhatsApp.',
+            ],
+        ];
+    }
+
+    /** @return array<string, string> */
+    public static function page(string $key): array
+    {
+        $pages = self::pages();
+
+        return ['key' => $key] + ($pages[$key] ?? []);
+    }
+
+    /** Páginas que se muestran como tarjetas en la sección "Explora" de la home. @return array<string, array<string, string>> */
+    public static function explorePages(): array
+    {
+        return array_filter(self::pages(), static function (array $page): bool {
+            return isset($page['summary']);
+        });
+    }
+
     /** @return array<int, array<string, mixed>> */
     public static function stats(): array
     {
@@ -108,6 +216,7 @@ final class SiteContent
     {
         return [
             [
+                'key'      => 'basico', // coincide con budgetRanges(): preselecciona el presupuesto en /contacto
                 'name'     => 'Plan Básico',
                 'desc'     => 'Para emprendedores que necesitan comenzar su presencia digital.',
                 'price'    => '$XXX.XXX',
@@ -121,6 +230,7 @@ final class SiteContent
                 ],
             ],
             [
+                'key'      => 'profesional', // coincide con budgetRanges(): preselecciona el presupuesto en /contacto
                 'name'     => 'Plan Profesional',
                 'desc'     => 'Para empresas que necesitan una página más completa.',
                 'price'    => '$XXX.XXX',
@@ -136,6 +246,7 @@ final class SiteContent
                 ],
             ],
             [
+                'key'      => 'premium', // coincide con budgetRanges(): preselecciona el presupuesto en /contacto
                 'name'     => 'Plan Premium',
                 'desc'     => 'Para empresas que buscan una presencia digital avanzada.',
                 'price'    => '$XXX.XXX',

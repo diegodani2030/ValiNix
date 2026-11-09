@@ -1,11 +1,6 @@
 <?php /** @var array<int, array<string, mixed>> $plans */ ?>
     <section class="pricing" id="precios">
         <div class="container">
-            <div class="section-head">
-                <span class="eyebrow">Planes</span>
-                <h2 class="section-title">Un plan para cada etapa de tu negocio.</h2>
-            </div>
-
             <div class="pricing__grid">
 <?php foreach ($plans as $plan): ?>
                 <div class="price-card<?= $plan['featured'] ? ' price-card--featured' : '' ?> reveal">
@@ -20,7 +15,7 @@
                         <li><?= e($feature) ?></li>
 <?php endforeach; ?>
                     </ul>
-                    <a href="#contacto" class="btn <?= $plan['featured'] ? 'btn--accent' : 'btn--ghost' ?> btn--block">Solicitar cotización</a>
+                    <a href="<?= e(url('contacto') . '?plan=' . rawurlencode($plan['key'])) ?>" class="btn <?= $plan['featured'] ? 'btn--accent' : 'btn--ghost' ?> btn--block">Solicitar cotización</a>
                 </div>
 <?php endforeach; ?>
             </div>

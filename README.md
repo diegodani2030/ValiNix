@@ -1,7 +1,18 @@
 # ValiNix
 
-Landing page de ValiNix (diseño y desarrollo web), hecha en PHP sin frameworks
-con el patrón **MVC (Modelo – Vista – Controlador)**.
+Sitio web de ValiNix (diseño y desarrollo web), hecho en PHP sin frameworks
+con el patrón **MVC (Modelo – Vista – Controlador)**. Cada sección del menú es
+una página aparte:
+
+| Página               | URL                     | Controlador                 |
+|----------------------|-------------------------|-----------------------------|
+| Inicio               | `/`                     | `PageController@home`       |
+| Servicios            | `/servicios`            | `PageController@services`   |
+| Proceso              | `/proceso`              | `PageController@process`    |
+| Proyectos            | `/proyectos`            | `PageController@projects`   |
+| Precios              | `/precios`              | `PageController@pricing`    |
+| Preguntas frecuentes | `/preguntas-frecuentes` | `PageController@faq`        |
+| Contacto             | `/contacto`             | `ContactController@show` / `@store` |
 
 Sitio publicado: https://valinix.infinityfree.me
 
@@ -23,17 +34,17 @@ app/
 │   ├── Config.php         Lee config/config.php
 │   └── helpers.php        e(), url(), asset(), config(), icon(), whatsapp_url()
 ├── Models/                M — datos y reglas de negocio
-│   ├── SiteContent.php    Servicios, proyectos, planes, testimonios, FAQ...
+│   ├── SiteContent.php    Páginas del menú, servicios, proyectos, planes, FAQ...
 │   └── ContactRequest.php Limpia, valida y envía la solicitud de cotización
 ├── Controllers/           C — reciben la petición y deciden qué responder
-│   ├── HomeController.php     GET  /          -> página principal
-│   ├── ContactController.php  POST /contacto  -> procesa el formulario
+│   ├── PageController.php     Inicio, servicios, proceso, proyectos, precios, FAQ
+│   ├── ContactController.php  GET /contacto (página) y POST /contacto (formulario)
 │   └── ErrorController.php    404 / 405
 └── Views/                 V — solo HTML, sin lógica de negocio
     ├── layouts/main.php   <head>, navbar, footer
-    ├── partials/          header, footer, iconos SVG
-    ├── home/index.php     Une las secciones de la home
-    ├── home/sections/     hero, servicios, proyectos, precios, contacto...
+    ├── partials/          header (menú), footer, encabezado de página, iconos SVG
+    ├── pages/             Una vista por página: home, services, process, projects...
+    ├── sections/          Bloques reutilizables: hero, servicios, planes, FAQ, contacto...
     └── errors/404.php
 
 css/  js/  assets/         Archivos estáticos (se sirven directamente)
@@ -42,15 +53,17 @@ tests/smoke.sh             Prueba automática del sitio y del formulario
 
 ## Cómo funciona una petición
 
-1. El navegador pide `/` → `.htaccess` la manda a `index.php`.
+1. El navegador pide `/servicios` → `.htaccess` la manda a `index.php`.
 2. `index.php` carga `app/bootstrap.php` y le pasa la URL al `Router`.
-3. El `Router` encuentra la ruta en `app/routes.php` → `HomeController@index`.
-4. El controlador pide los datos al modelo `SiteContent` y llama a la vista `home/index`.
-5. La vista se renderiza dentro de `layouts/main.php` y se envía al navegador.
+3. El `Router` encuentra la ruta en `app/routes.php` → `PageController@services`.
+4. El controlador pide los datos al modelo `SiteContent` y llama a la vista `pages/services`.
+5. La vista arma la página con `partials/page-header` y bloques de `sections/`,
+   se renderiza dentro de `layouts/main.php` y se envía al navegador.
 
-El formulario hace `POST /contacto` → `ContactController@store` usa el modelo
-`ContactRequest` para validar y enviar el correo, guarda un mensaje flash en la
-sesión y redirige a `/#contacto` (patrón POST → redirección → GET).
+El formulario de `/contacto` hace `POST /contacto` → `ContactController@store` usa
+el modelo `ContactRequest` para validar y enviar el correo, guarda un mensaje flash
+en la sesión y redirige a `/contacto` (patrón POST → redirección → GET).
+Los botones de `/precios` llevan a `/contacto?plan=...` y el presupuesto queda preseleccionado.
 
 ## Cambios comunes
 
@@ -58,10 +71,12 @@ sesión y redirige a `/#contacto` (patrón POST → redirección → GET).
 |-----------------------------------------|-------------------------------------------|
 | Correo, WhatsApp u horario              | `config/config.php`                       |
 | Servicios, proyectos, planes, FAQ       | `app/Models/SiteContent.php`              |
-| Diseño/HTML de una sección              | `app/Views/home/sections/<sección>.php`   |
+| Título, descripción o SEO de una página | `SiteContent::pages()`                    |
+| Diseño/HTML de un bloque                | `app/Views/sections/<bloque>.php`         |
+| Qué bloques lleva una página            | `app/Views/pages/<página>.php`            |
 | Menú o footer                           | `app/Views/partials/header.php` / `footer.php` |
 | Reglas de validación del formulario     | `app/Models/ContactRequest.php`           |
-| Agregar una página nueva                | ruta en `app/routes.php` + método en un controlador + vista en `app/Views/` |
+| Agregar una página nueva                | entrada en `SiteContent::pages()` + ruta en `app/routes.php` + método en `PageController` + vista en `app/Views/pages/` |
 
 ## Probar en local
 

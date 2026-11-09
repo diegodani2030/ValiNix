@@ -7,8 +7,8 @@
                 <h1 class="hero__title">Transformamos ideas en páginas web que <span class="text-accent">generan resultados.</span></h1>
                 <p class="hero__text">Creamos sitios web modernos, rápidos y adaptables a cualquier dispositivo, pensados desde el primer clic para convertir visitantes en clientes.</p>
                 <div class="hero__actions">
-                    <a href="#contacto" class="btn btn--accent">Quiero mi página web</a>
-                    <a href="#proyectos" class="btn btn--ghost">Ver proyectos</a>
+                    <a href="<?= e(url('contacto')) ?>" class="btn btn--accent">Quiero mi página web</a>
+                    <a href="<?= e(url('proyectos')) ?>" class="btn btn--ghost">Ver proyectos</a>
                 </div>
 
                 <div class="hero__stats">

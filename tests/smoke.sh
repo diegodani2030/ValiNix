@@ -13,56 +13,97 @@ fail() { echo "❌ FALLO: $*"; exit 1; }
 ok()   { echo "✅ $*"; PASS=$((PASS + 1)); }
 
 status() { curl -s -o /dev/null -w '%{http_code}' "$@"; }
-count()  { grep -oE "$1" "$2" | wc -l | tr -d ' '; }
+count()  { { grep -oE "$1" "$2" || true; } | wc -l | tr -d ' '; }
 fetch()  { curl -s -c "$JAR" -b "$JAR" -o "$2" "$1"; }   # guarda la página en un archivo (con cookies)
 token()  { grep -oE 'name="_token" value="[a-f0-9]+"' "$1" | sed -E 's/.*value="([a-f0-9]+)"/\1/'; }
+expect_count() { # patrón archivo cantidad descripción
+    local n; n="$(count "$1" "$2")"
+    [ "$n" = "$3" ] || fail "$4: se esperaban $3 y hay $n"
+}
 
-# --- Página principal ---------------------------------------------------------
-code=$(curl -s -c "$JAR" -b "$JAR" -o "$TMP/home.html" -w '%{http_code}' "$BASE/")
-[ "$code" = 200 ] || fail "la home devolvió $code"
-grep -q '<title>ValiNix' "$TMP/home.html" || fail "la home no tiene el título de ValiNix"
-ok "home responde 200 con título"
-
-for id in inicio problema servicios beneficios proceso proyectos precios testimonios faq contacto; do
-    grep -q "id=\"$id\"" "$TMP/home.html" || fail "falta la sección #$id"
+# --- Cada página del menú es una página aparte ----------------------------------
+# ruta | título esperado | texto del menú activo
+PAGES=(
+    "/|ValiNix — Diseño y desarrollo web|Inicio"
+    "/servicios|Servicios — ValiNix|Servicios"
+    "/proceso|Cómo trabajamos — ValiNix|Proceso"
+    "/proyectos|Proyectos — ValiNix|Proyectos"
+    "/precios|Precios y planes — ValiNix|Precios"
+    "/preguntas-frecuentes|Preguntas frecuentes — ValiNix|Preguntas frecuentes"
+    "/contacto|Contacto — ValiNix|Contacto"
+)
+for entry in "${PAGES[@]}"; do
+    IFS='|' read -r path title nav <<< "$entry"
+    file="$TMP/page$(echo "$path" | tr '/' '_').html"
+    code=$(curl -s -c "$JAR" -b "$JAR" -o "$file" -w '%{http_code}' "$BASE$path")
+    [ "$code" = 200 ] || fail "$path devolvió $code"
+    grep -q "<title>$title" "$file" || fail "$path no tiene el título '$title'"
+    [ "$(head -c 15 "$file")" = '<!DOCTYPE html>' ] || fail "$path no empieza con <!DOCTYPE html>"
+    expect_count '<h1[ >]' "$file" 1 "$path debería tener un solo <h1>"
+    expect_count 'class="is-active" aria-current="page">' "$file" 1 "$path debería marcar una sola página activa en el menú"
+    grep -q "class=\"is-active\" aria-current=\"page\">$nav</a>" "$file" || fail "$path no marca '$nav' como activo en el menú"
+    if grep -qE 'href="#(inicio|servicios|proceso|proyectos|precios|faq|contacto)"' "$file"; then
+        fail "$path aún enlaza a secciones con # en vez de páginas"
+    fi
 done
-ok "están las 10 secciones con id"
+ok "las 7 páginas responden 200, con su título, un <h1> y el menú activo correcto"
 
-[ "$(count 'class="service-card ' "$TMP/home.html")" = 6 ]  || fail "deberían ser 6 servicios"
-[ "$(count 'class="project-card"' "$TMP/home.html")" = 6 ]  || fail "deberían ser 6 proyectos"
-[ "$(count 'class="price-card[ "]' "$TMP/home.html")" = 3 ] || fail "deberían ser 3 planes"
-[ "$(count 'class="faq-item"' "$TMP/home.html")" = 7 ]      || fail "deberían ser 7 preguntas"
-[ "$(count 'class="testimonial-slide[ "]' "$TMP/home.html")" = 3 ] || fail "deberían ser 3 testimonios"
-grep -q 'price-card--featured' "$TMP/home.html" || fail "falta el plan destacado"
-ok "contenido del modelo renderizado (servicios, proyectos, planes, FAQ, testimonios)"
+P="$TMP/page_.html"
+for href in /servicios /proceso /proyectos /precios /preguntas-frecuentes /contacto; do
+    grep -q "href=\"$href\"" "$P" || fail "el menú no enlaza a $href"
+done
+ok "el menú enlaza a cada página"
 
-[ "$(head -c 15 "$TMP/home.html")" = '<!DOCTYPE html>' ] || fail "la página no empieza con <!DOCTYPE html>"
-ok "sin caracteres sueltos antes del DOCTYPE"
+# --- Contenido de cada página ---------------------------------------------------
+grep -q 'class="hero"' "$P" || fail "la home no tiene el hero"
+grep -q 'id="problema"' "$P" || fail "la home no tiene la sección del problema"
+expect_count 'class="service-card explore-card' "$P" 6 "tarjetas de 'Explora' en la home"
+expect_count 'class="testimonial-slide[ "]' "$P" 3 "testimonios en la home"
+if grep -q 'class="services"' "$P"; then fail "la home ya no debería mostrar la sección completa de servicios"; fi
+grep -q 'href="/contacto" class="btn btn--accent">Quiero mi página web' "$P" || fail "el botón del hero no lleva a /contacto"
+ok "inicio: hero, problema, 6 accesos a páginas y testimonios"
 
-TOKEN="$(token "$TMP/home.html")"
-[ -n "$TOKEN" ] || fail "el formulario no tiene token CSRF"
-grep -q 'action="/contacto"' "$TMP/home.html" || fail "el formulario no apunta a /contacto"
-ok "formulario con token CSRF y action /contacto"
+expect_count 'class="service-card reveal"' "$TMP/page_servicios.html" 6 "servicios"
+grep -q 'id="beneficios"' "$TMP/page_servicios.html" || fail "/servicios no muestra los beneficios"
+expect_count 'class="timeline__step' "$TMP/page_proceso.html" 5 "pasos del proceso"
+expect_count 'class="project-card"' "$TMP/page_proyectos.html" 6 "proyectos"
+expect_count 'class="filter-btn' "$TMP/page_proyectos.html" 5 "filtros de proyectos"
+expect_count 'class="price-card[ "]' "$TMP/page_precios.html" 3 "planes"
+grep -q 'price-card--featured' "$TMP/page_precios.html" || fail "falta el plan destacado"
+for plan in basico profesional premium; do
+    grep -q "href=\"/contacto?plan=$plan\"" "$TMP/page_precios.html" || fail "el plan $plan no enlaza a /contacto?plan=$plan"
+done
+expect_count 'class="faq-item"' "$TMP/page_preguntas-frecuentes.html" 7 "preguntas frecuentes"
+ok "servicios, proceso, proyectos, precios y FAQ muestran su contenido"
+
+C="$TMP/page_contacto.html"
+grep -q 'id="contactForm"' "$C" || fail "/contacto no tiene el formulario"
+grep -q 'action="/contacto"' "$C" || fail "el formulario no apunta a /contacto"
+[ -n "$(token "$C")" ] || fail "el formulario no tiene token CSRF"
+fetch "$BASE/contacto?plan=premium" "$TMP/plan.html"
+grep -q '<option value="premium" selected>' "$TMP/plan.html" || fail "?plan=premium no preselecciona el presupuesto"
+fetch "$BASE/contacto?plan=hackeo" "$TMP/plan-bad.html"
+if grep -q ' selected>' "$TMP/plan-bad.html"; then fail "un ?plan inválido no debería preseleccionar nada"; fi
+ok "contacto: formulario con CSRF y preselección de plan desde /precios"
 
 # --- Archivos estáticos ---------------------------------------------------------
 for f in css/style.css js/script.js assets/icons/favicon.svg; do
     [ "$(status "$BASE/$f")" = 200 ] || fail "$f no carga"
 done
 curl -s -o "$TMP/style.css" "$BASE/css/style.css"
-grep -q '{' "$TMP/style.css" || fail "style.css no parece CSS"
+grep -q '\.page-header' "$TMP/style.css" || fail "style.css no tiene los estilos de páginas internas"
 ok "css, js y favicon cargan"
 
 # --- Errores y rutas privadas ---------------------------------------------------
 [ "$(status "$BASE/no-existe")" = 404 ] || fail "/no-existe debería ser 404"
 [ "$(status "$BASE/app/routes.php")" = 404 ] || fail "/app/ no debería ser accesible"
 [ "$(status "$BASE/config/config.php")" = 404 ] || fail "/config/ no debería ser accesible"
-ok "404 para rutas inexistentes y carpetas privadas"
-
-loc=$(curl -s -o /dev/null -w '%{http_code} %{redirect_url}' "$BASE/contacto")
-[ "$loc" = "303 $BASE/#contacto" ] || fail "GET /contacto debería redirigir a /#contacto (fue: $loc)"
-ok "GET /contacto redirige a la sección de contacto"
+[ "$(status "$BASE/servicios/")" = 200 ] || fail "/servicios/ (con barra final) debería funcionar"
+ok "404 para rutas inexistentes y carpetas privadas; la barra final se tolera"
 
 # --- Formulario: envío válido ---------------------------------------------------
+fetch "$BASE/contacto" "$TMP/form.html"
+TOKEN="$(token "$TMP/form.html")"
 loc=$(curl -s -c "$JAR" -b "$JAR" -o /dev/null -w '%{http_code} %{redirect_url}' \
     --data-urlencode "_token=$TOKEN" \
     --data-urlencode "nombre=Ana Pérez" \
@@ -73,28 +114,29 @@ loc=$(curl -s -c "$JAR" -b "$JAR" -o /dev/null -w '%{http_code} %{redirect_url}'
     --data-urlencode "presupuesto=basico" \
     --data-urlencode "mensaje=Quiero una landing page para mi tienda." \
     "$BASE/contacto")
-[ "$loc" = "303 $BASE/#contacto" ] || fail "POST válido debería redirigir con 303 (fue: $loc)"
-fetch "$BASE/" "$TMP/after-ok.html"
+[ "$loc" = "303 $BASE/contacto#contactForm" ] || fail "POST válido debería redirigir a /contacto#contactForm (fue: $loc)"
+fetch "$BASE/contacto" "$TMP/after-ok.html"
 grep -q 'form-alert--success' "$TMP/after-ok.html" || fail "no aparece el mensaje de éxito"
 grep -q 'Gracias Ana Pérez' "$TMP/after-ok.html" || fail "el mensaje de éxito no saluda por el nombre"
-fetch "$BASE/" "$TMP/reload.html"
+fetch "$BASE/contacto" "$TMP/reload.html"
 if grep -q 'form-alert' "$TMP/reload.html"; then fail "el mensaje flash debería desaparecer al recargar"; fi
-ok "envío válido: redirección, mensaje de éxito y flash de un solo uso"
+ok "envío válido: redirección a /contacto, mensaje de éxito y flash de un solo uso"
 
 # --- Formulario: datos inválidos ------------------------------------------------
-TOKEN="$(token "$TMP/after-ok.html")"
+TOKEN="$(token "$TMP/reload.html")"
 curl -s -c "$JAR" -b "$JAR" -o /dev/null \
     --data-urlencode "_token=$TOKEN" \
     --data-urlencode "nombre=A" \
     --data-urlencode "correo=correo-malo" \
     --data-urlencode "telefono=abc" \
-    --data-urlencode "presupuesto=" \
+    --data-urlencode "presupuesto=premium" \
     --data-urlencode "mensaje=corto" \
     "$BASE/contacto"
-fetch "$BASE/" "$TMP/after-bad.html"
+fetch "$BASE/contacto" "$TMP/after-bad.html"
 grep -q 'form-alert--error' "$TMP/after-bad.html" || fail "no aparece el mensaje de error"
 grep -q 'El correo electrónico no es válido' "$TMP/after-bad.html" || fail "falta el error del correo"
 grep -q 'value="correo-malo"' "$TMP/after-bad.html" || fail "no se conservaron los datos escritos"
+grep -q '<option value="premium" selected>' "$TMP/after-bad.html" || fail "no se conservó el presupuesto elegido"
 ok "datos inválidos: errores mostrados y formulario conserva lo escrito"
 
 # --- Formulario: sin token CSRF -------------------------------------------------
@@ -102,13 +144,13 @@ curl -s -c "$JAR" -b "$JAR" -o /dev/null \
     --data-urlencode "nombre=Ana" --data-urlencode "correo=ana@example.com" \
     --data-urlencode "telefono=3001234567" --data-urlencode "mensaje=Mensaje suficientemente largo" \
     "$BASE/contacto"
-fetch "$BASE/" "$TMP/no-token.html"
+fetch "$BASE/contacto" "$TMP/no-token.html"
 grep -q 'Tu sesión expiró' "$TMP/no-token.html" || fail "un POST sin token debería rechazarse"
 ok "POST sin token CSRF rechazado"
 
 # --- Formulario: bot (honeypot) -------------------------------------------------
 curl -s -c "$JAR" -b "$JAR" -o /dev/null --data-urlencode "website=http://spam.example" "$BASE/contacto"
-fetch "$BASE/" "$TMP/bot.html"
+fetch "$BASE/contacto" "$TMP/bot.html"
 grep -q 'Gracias, hemos recibido tu mensaje.' "$TMP/bot.html" || fail "el honeypot no respondió como esperado"
 ok "honeypot descarta bots en silencio"
 

@@ -7,19 +7,38 @@ namespace App\Controllers;
 use App\Core\Controller;
 use App\Core\Session;
 use App\Models\ContactRequest;
+use App\Models\SiteContent;
 
 /**
- * Formulario de contacto / solicitud de cotización.
+ * Página de contacto y formulario de solicitud de cotización.
  */
 final class ContactController extends Controller
 {
-    /** GET /contacto: lleva a la sección de contacto de la página principal. */
+    /** GET /contacto (acepta ?plan=basico|profesional|premium para preseleccionar el presupuesto). */
     public function show(): void
     {
-        $this->redirect('/', 'contacto');
+        $budgetRanges = SiteContent::budgetRanges();
+        $old          = Session::pullFlash('form_old', []);
+
+        $plan = is_string($_GET['plan'] ?? null) ? $_GET['plan'] : '';
+        if ($old === [] && $plan !== '' && array_key_exists($plan, $budgetRanges)) {
+            $old = ['presupuesto' => $plan];
+        }
+
+        $this->view('pages/contact', [
+            'page'         => SiteContent::page('contacto'),
+            'projectTypes' => SiteContent::projectTypes(),
+            'budgetRanges' => $budgetRanges,
+            'form'         => [
+                'status'  => Session::pullFlash('form_status'),
+                'message' => Session::pullFlash('form_message'),
+                'old'     => $old,
+                'token'   => Session::csrfToken(),
+            ],
+        ]);
     }
 
-    /** POST /contacto: procesa el formulario y vuelve a la página con un mensaje. */
+    /** POST /contacto: procesa el formulario y vuelve a /contacto con un mensaje. */
     public function store(): void
     {
         $request = ContactRequest::fromInput($_POST);
@@ -56,6 +75,6 @@ final class ContactController extends Controller
             Session::flash('form_old', $old);
         }
 
-        $this->redirect('/', 'contacto');
+        $this->redirect('/contacto', 'contactForm');
     }
 }

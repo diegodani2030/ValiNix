@@ -1,19 +1,13 @@
 <?php
-/** @var string $navBase Prefijo de los enlaces ('' en la home, '/' en otras páginas). */
+/** @var array<string, array<string, string>> $navPages Páginas del sitio (SiteContent::pages()). */
 
-$quickLinks = [
-    'inicio'    => 'Inicio',
-    'servicios' => 'Servicios',
-    'proceso'   => 'Proceso',
-    'proyectos' => 'Proyectos',
-    'precios'   => 'Precios',
-];
+$quickLinks   = array_intersect_key($navPages, array_flip(['inicio', 'servicios', 'proceso', 'proyectos', 'precios', 'faq']));
 $serviceLinks = ['Diseño web', 'Landing pages', 'Sitios empresariales', 'Catálogos digitales', 'SEO y rendimiento'];
 ?>
 <footer class="footer">
     <div class="container footer__inner">
         <div class="footer__brand">
-            <a href="<?= e($navBase) ?>#inicio" class="navbar__logo" aria-label="ValiNix - inicio">
+            <a href="<?= e(url('/')) ?>" class="navbar__logo" aria-label="ValiNix - inicio">
                 <span class="navbar__logo-mark"><?= str_replace(['width="28"', 'height="28"'], ['width="26"', 'height="26"'], icon('logo')) ?></span>
                 <span class="navbar__logo-text">valinix</span>
             </a>
@@ -28,8 +22,8 @@ $serviceLinks = ['Diseño web', 'Landing pages', 'Sitios empresariales', 'Catál
         <div class="footer__col">
             <h3 class="footer__title">Enlaces rápidos</h3>
             <ul class="footer__links">
-<?php foreach ($quickLinks as $anchor => $label): ?>
-                <li><a href="<?= e($navBase) ?>#<?= e($anchor) ?>"><?= e($label) ?></a></li>
+<?php foreach ($quickLinks as $link): ?>
+                <li><a href="<?= e(url($link['path'])) ?>"><?= e($link['nav']) ?></a></li>
 <?php endforeach; ?>
             </ul>
         </div>
@@ -38,7 +32,7 @@ $serviceLinks = ['Diseño web', 'Landing pages', 'Sitios empresariales', 'Catál
             <h3 class="footer__title">Servicios</h3>
             <ul class="footer__links">
 <?php foreach ($serviceLinks as $label): ?>
-                <li><a href="<?= e($navBase) ?>#servicios"><?= e($label) ?></a></li>
+                <li><a href="<?= e(url('servicios')) ?>"><?= e($label) ?></a></li>
 <?php endforeach; ?>
             </ul>
         </div>
@@ -46,6 +40,7 @@ $serviceLinks = ['Diseño web', 'Landing pages', 'Sitios empresariales', 'Catál
         <div class="footer__col">
             <h3 class="footer__title">Contacto</h3>
             <ul class="footer__links">
+                <li><a href="<?= e(url('contacto')) ?>">Solicitar cotización</a></li>
                 <li><a href="mailto:<?= e(config('contact.email')) ?>"><?= e(config('contact.email')) ?></a></li>
                 <li><a href="<?= e(whatsapp_url()) ?>">WhatsApp: <?= e(config('contact.whatsapp_display')) ?></a></li>
                 <li><?= e(config('contact.hours_short')) ?></li>

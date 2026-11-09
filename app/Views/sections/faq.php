@@ -1,11 +1,6 @@
 <?php /** @var array<int, array<string, string>> $faqs */ ?>
     <section class="faq" id="faq">
         <div class="container">
-            <div class="section-head">
-                <span class="eyebrow">Dudas frecuentes</span>
-                <h2 class="section-title">Preguntas frecuentes</h2>
-            </div>
-
             <div class="faq__list">
 <?php foreach ($faqs as $faq): ?>
                 <div class="faq-item">
