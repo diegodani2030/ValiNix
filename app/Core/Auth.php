@@ -15,8 +15,8 @@ use App\Models\Usuario;
  * - Si el usuario no existe también se ejecuta password_verify() (con un hash
  *   de relleno) para que la respuesta tarde lo mismo y no revele qué usuarios existen.
  * - Los intentos se guardan en la tabla intentos_login: 5 fallos con el mismo
- *   usuario desde la misma IP, o 30 desde la misma IP con cualquier usuario,
- *   bloquean 15 minutos. Cada intento se anota ANTES de revisar la contraseña,
+ *   usuario desde la misma IP, 30 desde la misma IP con cualquier usuario, o
+ *   50 contra el mismo usuario desde cualquier IP, bloquean 15 minutos. Cada intento se anota ANTES de revisar la contraseña,
  *   así varios intentos enviados al mismo tiempo también cuentan.
  * - Al entrar se cambia el id de sesión (evita robo de sesión).
  */
@@ -24,6 +24,7 @@ final class Auth
 {
     private const MAX_POR_USUARIO = 5;
     private const MAX_POR_IP = 30;
+    private const MAX_POR_CUENTA = 50; // alto, para que no sirva para bloquear al admin a propósito
     private const VENTANA_MINUTOS = 15;
 
     /** Hash bcrypt de relleno (de una contraseña aleatoria que nadie conoce). */
@@ -101,7 +102,8 @@ final class Auth
         $intentos = new IntentoLogin();
 
         return $intentos->fallosPorClaveEIp(self::clave($usuarioOCorreo), self::ip(), self::VENTANA_MINUTOS) >= self::MAX_POR_USUARIO
-            || $intentos->fallosPorIp(self::ip(), self::VENTANA_MINUTOS) >= self::MAX_POR_IP;
+            || $intentos->fallosPorIp(self::ip(), self::VENTANA_MINUTOS) >= self::MAX_POR_IP
+            || $intentos->fallosPorClave(self::clave($usuarioOCorreo), self::VENTANA_MINUTOS) >= self::MAX_POR_CUENTA;
     }
 
     /** ¿El último intento se rechazó por bloqueo (y no por datos incorrectos)? */
@@ -130,7 +132,8 @@ final class Auth
         // 1. Se anota el intento antes de revisar nada y se cuenta incluyéndolo.
         $intentos->registrarFallo($clave, $ip);
         if ($intentos->fallosPorClaveEIp($clave, $ip, self::VENTANA_MINUTOS) > self::MAX_POR_USUARIO
-            || $intentos->fallosPorIp($ip, self::VENTANA_MINUTOS) > self::MAX_POR_IP) {
+            || $intentos->fallosPorIp($ip, self::VENTANA_MINUTOS) > self::MAX_POR_IP
+            || $intentos->fallosPorClave($clave, self::VENTANA_MINUTOS) > self::MAX_POR_CUENTA) {
             self::$locked = true;
             return null;
         }

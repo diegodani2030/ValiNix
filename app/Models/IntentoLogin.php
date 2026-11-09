@@ -30,6 +30,15 @@ final class IntentoLogin extends Model
         );
     }
 
+    /** Fallos recientes para ese usuario/correo desde cualquier IP (ataques repartidos en muchos equipos). */
+    public function fallosPorClave(string $clave, int $minutos): int
+    {
+        return (int) $this->value(
+            'SELECT COUNT(*) FROM intentos_login WHERE clave = :clave AND creado_en > (NOW() - INTERVAL :minutos MINUTE)',
+            ['clave' => $clave, 'minutos' => $minutos]
+        );
+    }
+
     /** Fallos recientes desde esa IP (con cualquier usuario). */
     public function fallosPorIp(string $ip, int $minutos): int
     {
