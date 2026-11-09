@@ -47,6 +47,9 @@ final class AuthController extends Controller
         }
 
         $user = Auth::attempt($usuario, $contrasena);
+        if ($user === null && Auth::wasLocked()) {
+            $this->fail($usuario, 'Demasiados intentos fallidos. Espera ' . Auth::lockMinutes() . ' minutos e intenta de nuevo.');
+        }
         if ($user === null) {
             $this->fail($usuario, 'Usuario o contraseña incorrectos.');
         }

@@ -37,7 +37,7 @@ El panel muestra un aviso hasta que se cambia esa contraseña en *Mi cuenta*.
 
 ## Base de datos
 
-10 tablas (`database/valinix.sql`) con llaves foráneas:
+11 tablas (`database/valinix.sql`) con llaves foráneas (más `intentos_login`, que guarda los intentos fallidos de inicio de sesión):
 
 ```mermaid
 erDiagram
@@ -121,7 +121,8 @@ erDiagram
     }
 ```
 
-- `database/valinix.sql` — crea las tablas (DDL) e inserta los datos iniciales (DML).
+- `database/valinix.sql` — instalación desde cero: crea las tablas (DDL) e inserta los datos iniciales (DML).
+- `database/migracion-version-anterior.sql` — convierte la base de la versión anterior a esta estructura sin borrar datos.
 - `database/consultas.sql` — consultas de ejemplo: generales, específicas, multitabla
   (`JOIN`, `GROUP BY`, subconsulta), `INSERT`/`UPDATE`/`DELETE` y `ALTER`/`CREATE INDEX`/`VIEW`.
   Al lado de cada una dice en qué método del sistema se usa.
@@ -129,6 +130,19 @@ erDiagram
 Si la base de datos no está configurada o no responde, el sitio público sigue
 funcionando con el contenido de respaldo de `SiteContent`; el panel muestra
 "no disponible" y el formulario de contacto avisa "Error al guardar".
+
+### Ya tengo la base de la versión anterior (valinix_db con 8 tablas)
+
+No importes `valinix.sql` (borra las tablas). Usa la migración, que conserva los datos:
+
+1. phpMyAdmin → selecciona `valinix_db` → **Exportar** → Continuar (copia de seguridad).
+2. Con `valinix_db` seleccionada → **Importar** → `database/migracion-version-anterior.sql` → Continuar. Una sola vez.
+3. Quedan 11 tablas. Los usuarios que ya existían quedan como Administrador y deben
+   elegir una contraseña nueva al entrar. La categoría de cada proyecto pasa a la tabla
+   `categorias`, el presupuesto de cada mensaje pasa a `plan_id` y el tipo de proyecto queda en el asunto.
+
+La prueba `tests/migracion.sh` (también en GitHub Actions) migra una copia de la base
+anterior y revisa que el sitio y el panel funcionen con esos datos.
 
 ### Conectar la base de datos en InfinityFree
 

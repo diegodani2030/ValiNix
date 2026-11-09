@@ -14,8 +14,10 @@ use App\Models\Usuario;
  * - La contraseña se verifica con password_verify() contra el hash guardado.
  * - Si el usuario no existe también se ejecuta password_verify() (con un hash
  *   de relleno) para que la respuesta tarde lo mismo y no revele qué usuarios existen.
- * - Los intentos fallidos se guardan en la tabla intentos_login: 5 fallos con
- *   el mismo usuario, o 30 desde la misma IP, bloquean 15 minutos.
+ * - Los intentos se guardan en la tabla intentos_login: 5 fallos con el mismo
+ *   usuario desde la misma IP, o 30 desde la misma IP con cualquier usuario,
+ *   bloquean 15 minutos. Cada intento se anota ANTES de revisar la contraseña,
+ *   así varios intentos enviados al mismo tiempo también cuentan.
  * - Al entrar se cambia el id de sesión (evita robo de sesión).
  */
 final class Auth
@@ -29,6 +31,9 @@ final class Auth
 
     /** @var array<string, mixed>|null|false false = aún no se ha consultado */
     private static $user = false;
+
+    /** @var bool true si el último attempt() se rechazó por bloqueo. */
+    private static $locked = false;
 
     /**
      * Usuario con sesión iniciada (se vuelve a leer de la base de datos para
@@ -95,8 +100,14 @@ final class Auth
     {
         $intentos = new IntentoLogin();
 
-        return $intentos->fallosPorClave(self::clave($usuarioOCorreo), self::VENTANA_MINUTOS) >= self::MAX_POR_USUARIO
+        return $intentos->fallosPorClaveEIp(self::clave($usuarioOCorreo), self::ip(), self::VENTANA_MINUTOS) >= self::MAX_POR_USUARIO
             || $intentos->fallosPorIp(self::ip(), self::VENTANA_MINUTOS) >= self::MAX_POR_IP;
+    }
+
+    /** ¿El último intento se rechazó por bloqueo (y no por datos incorrectos)? */
+    public static function wasLocked(): bool
+    {
+        return self::$locked;
     }
 
     public static function lockMinutes(): int
@@ -113,18 +124,29 @@ final class Auth
     {
         $intentos = new IntentoLogin();
         $clave    = self::clave($usuarioOCorreo);
-        $user     = (new Usuario())->buscarParaLogin($usuarioOCorreo);
+        $ip       = self::ip();
+        self::$locked = false;
+
+        // 1. Se anota el intento antes de revisar nada y se cuenta incluyéndolo.
+        $intentos->registrarFallo($clave, $ip);
+        if ($intentos->fallosPorClaveEIp($clave, $ip, self::VENTANA_MINUTOS) > self::MAX_POR_USUARIO
+            || $intentos->fallosPorIp($ip, self::VENTANA_MINUTOS) > self::MAX_POR_IP) {
+            self::$locked = true;
+            return null;
+        }
+
+        $user = (new Usuario())->buscarParaLogin($usuarioOCorreo);
 
         // Siempre se verifica un hash, exista o no el usuario (mismo tiempo de respuesta).
         $valida = password_verify($contrasena, $user !== null ? (string) $user['contrasena'] : self::HASH_RELLENO);
 
+        // 2. Si falla, el intento anotado queda como fallo; si acierta, se borran sus fallos.
         if ($user === null || !$valida) {
-            $intentos->registrarFallo($clave, self::ip());
             $intentos->purgarViejos();
             return null;
         }
 
-        $intentos->limpiar($clave);
+        $intentos->limpiar($clave, $ip);
         session_regenerate_id(true);
         $_SESSION['auth_id'] = (int) $user['id'];
         self::$user = false;

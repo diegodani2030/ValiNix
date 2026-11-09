@@ -54,16 +54,25 @@ jobs:
           mysql -h 127.0.0.1 -uroot -proot valinix_consultas < database/valinix.sql
           mysql -h 127.0.0.1 -uroot -proot valinix_consultas < database/consultas.sql > /dev/null
 
-      - name: Levantar el sitio (8000 con base de datos, 8001 sin base de datos)
+      - name: Migrar una base de la versión anterior (sin perder datos)
+        run: |
+          mysql -h 127.0.0.1 -uroot -proot -e "CREATE DATABASE valinix_migrada CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
+          mysql -h 127.0.0.1 -uroot -proot valinix_migrada < tests/fixtures/valinix-version-anterior.sql
+          mysql -h 127.0.0.1 -uroot -proot valinix_migrada < database/migracion-version-anterior.sql
+          mysql -h 127.0.0.1 -uroot -proot valinix_migrada -e "SHOW TABLES;"
+
+      - name: Levantar el sitio (8000 con base de datos, 8001 sin base de datos, 8002 con la base migrada)
         run: |
           DB_HOST=127.0.0.1 DB_NAME=valinix_test DB_USER=root DB_PASSWORD=root \
             php -S 127.0.0.1:8000 index.php > server.log 2>&1 &
           php -S 127.0.0.1:8001 index.php > server-nodb.log 2>&1 &
-          for port in 8000 8001; do
+          DB_HOST=127.0.0.1 DB_NAME=valinix_migrada DB_USER=root DB_PASSWORD=root \
+            php -S 127.0.0.1:8002 index.php > server-mig.log 2>&1 &
+          for port in 8000 8001 8002; do
             for i in $(seq 1 20); do curl -s -o /dev/null http://127.0.0.1:$port/ && break; sleep 0.5; done
           done
-          curl -sf -o /dev/null http://127.0.0.1:8000/ && curl -sf -o /dev/null http://127.0.0.1:8001/ && exit 0
-          echo "El servidor no arrancó"; cat server.log server-nodb.log; exit 1
+          curl -sf -o /dev/null http://127.0.0.1:8000/ && curl -sf -o /dev/null http://127.0.0.1:8001/ && curl -sf -o /dev/null http://127.0.0.1:8002/ && exit 0
+          echo "El servidor no arrancó"; cat server.log server-nodb.log server-mig.log; exit 1
 
       - name: Prueba de humo con base de datos (páginas, formulario, login, permisos y CRUD)
         run: bash tests/smoke.sh http://127.0.0.1:8000 db
@@ -71,11 +80,14 @@ jobs:
       - name: Prueba de humo sin base de datos (contenido de respaldo)
         run: bash tests/smoke.sh http://127.0.0.1:8001 nodb
 
+      - name: Prueba del sitio con la base migrada
+        run: bash tests/migracion.sh http://127.0.0.1:8002
+
       - name: Errores de PHP durante las pruebas
         if: always()
         run: |
-          cat server.log server-nodb.log
-          if grep -E "PHP (Fatal|Parse|Warning|Notice|Deprecated)" server.log server-nodb.log; then
+          cat server.log server-nodb.log server-mig.log
+          if grep -E "PHP (Fatal|Parse|Warning|Notice|Deprecated)" server.log server-nodb.log server-mig.log; then
             echo "Se encontraron errores o avisos de PHP"; exit 1
           fi
 

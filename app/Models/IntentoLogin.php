@@ -18,12 +18,15 @@ final class IntentoLogin extends Model
         $this->run('INSERT INTO intentos_login (clave, ip) VALUES (:clave, :ip)', ['clave' => $clave, 'ip' => $ip]);
     }
 
-    /** Fallos recientes para ese usuario/correo. */
-    public function fallosPorClave(string $clave, int $minutos): int
+    /**
+     * Fallos recientes para ese usuario/correo DESDE ESA IP. Así, alguien desde
+     * otro equipo no puede dejar bloqueada la cuenta del administrador.
+     */
+    public function fallosPorClaveEIp(string $clave, string $ip, int $minutos): int
     {
         return (int) $this->value(
-            'SELECT COUNT(*) FROM intentos_login WHERE clave = :clave AND creado_en > (NOW() - INTERVAL :minutos MINUTE)',
-            ['clave' => $clave, 'minutos' => $minutos]
+            'SELECT COUNT(*) FROM intentos_login WHERE clave = :clave AND ip = :ip AND creado_en > (NOW() - INTERVAL :minutos MINUTE)',
+            ['clave' => $clave, 'ip' => $ip, 'minutos' => $minutos]
         );
     }
 
@@ -36,10 +39,10 @@ final class IntentoLogin extends Model
         );
     }
 
-    /** Al entrar bien se borran los fallos de ese usuario. */
-    public function limpiar(string $clave): void
+    /** Al entrar bien se borran los fallos de ese usuario desde esa IP. */
+    public function limpiar(string $clave, string $ip): void
     {
-        $this->run('DELETE FROM intentos_login WHERE clave = :clave', ['clave' => $clave]);
+        $this->run('DELETE FROM intentos_login WHERE clave = :clave AND ip = :ip', ['clave' => $clave, 'ip' => $ip]);
     }
 
     /** Borra los registros de más de un día para que la tabla no crezca. */
