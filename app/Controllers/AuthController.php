@@ -42,10 +42,8 @@ final class AuthController extends Controller
         if (!Database::isAvailable()) {
             $this->fail($usuario, 'El sistema no está disponible en este momento (sin conexión a la base de datos).');
         }
-
-        $espera = Auth::lockedFor();
-        if ($espera > 0) {
-            $this->fail($usuario, 'Demasiados intentos fallidos. Espera ' . (int) ceil($espera / 60) . ' minuto(s) e intenta de nuevo.');
+        if (Auth::isLocked($usuario)) {
+            $this->fail($usuario, 'Demasiados intentos fallidos. Espera ' . Auth::lockMinutes() . ' minutos e intenta de nuevo.');
         }
 
         $user = Auth::attempt($usuario, $contrasena);
@@ -55,7 +53,7 @@ final class AuthController extends Controller
 
         Session::flash('admin_status', 'success');
         Session::flash('admin_message', 'Bienvenido, ' . $user['nombre'] . '.');
-        $this->redirect('/admin');
+        $this->redirect((int) $user['debe_cambiar_contrasena'] === 1 ? '/admin/cuenta' : '/admin');
     }
 
     /** POST /logout */

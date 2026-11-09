@@ -12,7 +12,7 @@ use App\Core\Model;
  */
 final class Usuario extends Model
 {
-    private const COLUMNAS = 'u.id, u.rol_id, u.nombre, u.nombre_usuario, u.correo, u.activo, u.creado_en, u.actualizado_en, r.nombre AS rol';
+    private const COLUMNAS = 'u.id, u.rol_id, u.nombre, u.nombre_usuario, u.correo, u.activo, u.debe_cambiar_contrasena, u.creado_en, u.actualizado_en, r.nombre AS rol';
 
     /** Consulta multitabla: usuarios con el nombre de su rol. @return array<int, array<string, mixed>> */
     public function todos(): array
@@ -87,12 +87,17 @@ final class Usuario extends Model
         return (int) $this->value('SELECT COUNT(*) FROM usuarios');
     }
 
-    /** @param array<string, mixed> $datos nombre, nombre_usuario, correo, rol_id, activo, contrasena (texto plano) */
+    /**
+     * Crea el usuario. Como la contraseña la eligió el administrador, el
+     * usuario deberá cambiarla en su primer ingreso.
+     *
+     * @param array<string, mixed> $datos nombre, nombre_usuario, correo, rol_id, activo, contrasena (texto plano)
+     */
     public function crear(array $datos): int
     {
         $this->run(
-            'INSERT INTO usuarios (rol_id, nombre, nombre_usuario, correo, contrasena, activo)
-             VALUES (:rol_id, :nombre, :nombre_usuario, :correo, :contrasena, :activo)',
+            'INSERT INTO usuarios (rol_id, nombre, nombre_usuario, correo, contrasena, activo, debe_cambiar_contrasena)
+             VALUES (:rol_id, :nombre, :nombre_usuario, :correo, :contrasena, :activo, 1)',
             [
                 'rol_id'         => (int) $datos['rol_id'],
                 'nombre'         => $datos['nombre'],
@@ -106,7 +111,10 @@ final class Usuario extends Model
         return $this->lastId();
     }
 
-    /** @param array<string, mixed> $datos Si 'contrasena' viene vacía, no se cambia. */
+    /**
+     * @param array<string, mixed> $datos Si 'contrasena' viene vacía, no se cambia; si el
+     *                                    administrador la cambia, el usuario deberá elegir otra al entrar.
+     */
     public function actualizar(int $id, array $datos): void
     {
         $this->run(
@@ -124,7 +132,7 @@ final class Usuario extends Model
         );
 
         if (($datos['contrasena'] ?? '') !== '') {
-            $this->cambiarContrasena($id, (string) $datos['contrasena']);
+            $this->cambiarContrasena($id, (string) $datos['contrasena'], true);
         }
     }
 
@@ -136,11 +144,12 @@ final class Usuario extends Model
         );
     }
 
-    public function cambiarContrasena(int $id, string $contrasena): void
+    /** @param bool $debeCambiar true si la puso el administrador (el usuario deberá cambiarla). */
+    public function cambiarContrasena(int $id, string $contrasena, bool $debeCambiar = false): void
     {
         $this->run(
-            'UPDATE usuarios SET contrasena = :hash WHERE id = :id',
-            ['hash' => password_hash($contrasena, PASSWORD_DEFAULT), 'id' => $id]
+            'UPDATE usuarios SET contrasena = :hash, debe_cambiar_contrasena = :debe WHERE id = :id',
+            ['hash' => password_hash($contrasena, PASSWORD_DEFAULT), 'debe' => $debeCambiar, 'id' => $id]
         );
     }
 

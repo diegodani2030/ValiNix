@@ -9,7 +9,7 @@
  * @var string                    $section
  * @var int                       $unread
  * @var array{status: ?string, message: ?string} $flash
- * @var bool                      $initialPassword
+ * @var bool                      $mustChange      Debe cambiar la contraseña antes de usar el panel.
  */
 
 $menu = [
@@ -81,9 +81,9 @@ $menu = [
         </header>
 
         <main id="admin-main" class="admin-main">
-<?php if ($initialPassword): ?>
+<?php if ($mustChange): ?>
             <div class="admin-alert admin-alert--warning">
-                Estás usando la contraseña inicial del sistema. <a href="<?= e(url('admin/cuenta')) ?>">Cámbiala en Mi cuenta</a> para proteger el panel.
+                Por seguridad, elige una contraseña nueva (la actual la asignó el sistema o un administrador). Hasta entonces solo puedes usar <a href="<?= e(url('admin/cuenta')) ?>">Mi cuenta</a>.
             </div>
 <?php endif; ?>
 <?php if (!empty($flash['message'])): ?>

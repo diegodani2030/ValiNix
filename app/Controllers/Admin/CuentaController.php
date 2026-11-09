@@ -13,6 +13,8 @@ final class CuentaController extends AdminController
 {
     protected $section = 'cuenta';
 
+    protected $allowedBeforePasswordChange = true;
+
     /** GET /admin/cuenta */
     public function ver(): void
     {
@@ -45,6 +47,7 @@ final class CuentaController extends AdminController
           ->check($datos['correo'] !== '' && $modelo->existe('correo', $datos['correo'], $id), 'correo', 'Ese correo ya está registrado.');
 
         $cambiaContrasena = $datos['contrasena'] !== '';
+        $v->check(Auth::mustChangePassword() && !$cambiaContrasena, 'contrasena', 'Debes elegir una contraseña nueva para poder usar el panel.');
         if ($cambiaContrasena) {
             $v->required('actual')
               ->check($datos['actual'] !== '' && !password_verify($datos['actual'], (string) $modelo->hashDe($id)), 'actual', 'La contraseña actual no es correcta.')
@@ -65,10 +68,6 @@ final class CuentaController extends AdminController
             }
         })) {
             $this->back('/admin/cuenta', 'error', 'Error al guardar: no se pudieron guardar los cambios.');
-        }
-
-        if ($cambiaContrasena) {
-            Auth::forgetInitialPassword();
         }
 
         $this->back('/admin/cuenta', 'success', 'Registro actualizado correctamente.');

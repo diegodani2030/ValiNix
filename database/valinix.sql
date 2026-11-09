@@ -11,12 +11,14 @@
 --  con los datos iniciales. Úsalo para instalar, no para actualizar.
 --
 --  Usuario inicial del panel:  admin  /  valinix2026
---  (cámbiala apenas entres, en "Mi cuenta").
+--  Es solo para el primer ingreso: el sistema obliga a cambiarla antes de
+--  dejar usar el panel. Entra y cámbiala apenas importes la base.
 -- =====================================================================
 
 SET NAMES utf8mb4;
 SET FOREIGN_KEY_CHECKS = 0;
 
+DROP TABLE IF EXISTS intentos_login;
 DROP TABLE IF EXISTS mensajes;
 DROP TABLE IF EXISTS testimonios;
 DROP TABLE IF EXISTS plan_caracteristicas;
@@ -53,6 +55,7 @@ CREATE TABLE usuarios (
     correo         VARCHAR(150)     NOT NULL,
     contrasena     VARCHAR(255)     NOT NULL COMMENT 'Hash de password_hash(), nunca texto plano',
     activo         TINYINT(1)       NOT NULL DEFAULT 1,
+    debe_cambiar_contrasena TINYINT(1) NOT NULL DEFAULT 0 COMMENT '1 = debe elegir una contraseña nueva al entrar',
     creado_en      DATETIME         NOT NULL DEFAULT CURRENT_TIMESTAMP,
     actualizado_en DATETIME         NULL DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
     PRIMARY KEY (id),
@@ -190,6 +193,20 @@ CREATE TABLE mensajes (
         ON UPDATE CASCADE ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+-- ---------------------------------------------------------------------
+-- intentos_login: intentos fallidos de inicio de sesión (protección contra
+-- ataques de fuerza bruta). Se guardan en el servidor, no en la sesión.
+-- ---------------------------------------------------------------------
+CREATE TABLE intentos_login (
+    id        INT UNSIGNED NOT NULL AUTO_INCREMENT,
+    clave     VARCHAR(150) NOT NULL COMMENT 'Usuario o correo que se intentó (en minúsculas)',
+    ip        VARCHAR(45)  NOT NULL,
+    creado_en DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (id),
+    KEY idx_intentos_clave (clave, creado_en),
+    KEY idx_intentos_ip (ip, creado_en)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 -- =====================================================================
 --  Datos iniciales
 -- =====================================================================
@@ -198,9 +215,10 @@ INSERT INTO roles (id, nombre, descripcion) VALUES
 (1, 'Administrador',      'Gestiona usuarios, servicios, proyectos, testimonios y mensajes. Acceso total al panel.'),
 (2, 'Usuario registrado', 'Consulta la información del panel y administra su propia cuenta. No puede modificar datos.');
 
--- Contraseña: valinix2026 (hash generado con password_hash de PHP)
-INSERT INTO usuarios (id, rol_id, nombre, nombre_usuario, correo, contrasena) VALUES
-(1, 1, 'Administrador ValiNix', 'admin', 'admin@valinix.software', '$2y$10$0HCaGiiaGBDkHTjfzfAyaeaDCUzGrVsCJbNOHMinVwLBHQmV6lZkG');
+-- Contraseña: valinix2026 (hash generado con password_hash de PHP).
+-- debe_cambiar_contrasena = 1: al primer ingreso el panel exige cambiarla.
+INSERT INTO usuarios (id, rol_id, nombre, nombre_usuario, correo, contrasena, debe_cambiar_contrasena) VALUES
+(1, 1, 'Administrador ValiNix', 'admin', 'admin@valinix.software', '$2y$10$0HCaGiiaGBDkHTjfzfAyaeaDCUzGrVsCJbNOHMinVwLBHQmV6lZkG', 1);
 
 INSERT INTO servicios (id, titulo, descripcion, icono, orden) VALUES
 (1, 'Desarrollo web',           'Creación de páginas y aplicaciones web modernas, adaptadas a la identidad de cada empresa.', 'service-web',      1),

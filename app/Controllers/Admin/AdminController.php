@@ -17,13 +17,17 @@ use PDOException;
  * Antes de cualquier acción revisa, en este orden:
  *  1. Que haya base de datos (si no, muestra una página 503).
  *  2. Que haya una sesión iniciada (si no, manda a /login).
- *  3. Que los formularios POST traigan el token CSRF.
+ *  3. Que el usuario ya haya cambiado la contraseña inicial (si no, solo puede ir a Mi cuenta).
+ *  4. Que los formularios POST traigan el token CSRF.
  * Las acciones que modifican datos además llaman a requireAdmin().
  */
 abstract class AdminController extends Controller
 {
     /** @var string Opción del menú lateral que se marca como activa. */
     protected $section = 'dashboard';
+
+    /** @var bool true solo en Mi cuenta: se puede usar aunque falte cambiar la contraseña. */
+    protected $allowedBeforePasswordChange = false;
 
     public function __construct()
     {
@@ -38,6 +42,10 @@ abstract class AdminController extends Controller
         if (!Auth::check()) {
             Session::flash('login_error', 'Debes iniciar sesión para entrar al panel.');
             $this->redirect('/login');
+        }
+
+        if (Auth::mustChangePassword() && !$this->allowedBeforePasswordChange) {
+            $this->back('/admin/cuenta', 'error', 'Antes de usar el panel debes cambiar tu contraseña.');
         }
 
         if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST' && !Session::verifyCsrf($_POST['_token'] ?? null)) {
@@ -72,7 +80,7 @@ abstract class AdminController extends Controller
                 'status'  => Session::pullFlash('admin_status'),
                 'message' => Session::pullFlash('admin_message'),
             ],
-            'initialPassword' => Auth::usesInitialPassword(),
+            'mustChange'      => Auth::mustChangePassword(),
             'errors'          => [],
         ], $status, 'layouts/admin');
     }

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Core;
 
+use App\Models\IntentoLogin;
 use App\Models\Rol;
 use App\Models\Usuario;
 
@@ -11,16 +12,20 @@ use App\Models\Usuario;
  * Inicio y cierre de sesión del panel.
  *
  * - La contraseña se verifica con password_verify() contra el hash guardado.
+ * - Si el usuario no existe también se ejecuta password_verify() (con un hash
+ *   de relleno) para que la respuesta tarde lo mismo y no revele qué usuarios existen.
+ * - Los intentos fallidos se guardan en la tabla intentos_login: 5 fallos con
+ *   el mismo usuario, o 30 desde la misma IP, bloquean 15 minutos.
  * - Al entrar se cambia el id de sesión (evita robo de sesión).
- * - Después de 5 intentos fallidos hay que esperar 5 minutos.
  */
 final class Auth
 {
-    private const MAX_INTENTOS = 5;
-    private const BLOQUEO_SEGUNDOS = 300;
+    private const MAX_POR_USUARIO = 5;
+    private const MAX_POR_IP = 30;
+    private const VENTANA_MINUTOS = 15;
 
-    /** Contraseña con la que viene el usuario admin en database/valinix.sql. */
-    private const CONTRASENA_INICIAL = 'valinix2026';
+    /** Hash bcrypt de relleno (de una contraseña aleatoria que nadie conoce). */
+    private const HASH_RELLENO = '$2y$10$f5VYo4aqDEVhFrFMnQP6qO/HT5GDSHD5xUoXr02L6NGAgNutDSkWG';
 
     /** @var array<string, mixed>|null|false false = aún no se ha consultado */
     private static $user = false;
@@ -71,18 +76,32 @@ final class Auth
         return $user !== null ? (int) $user['id'] : null;
     }
 
+    /** ¿El usuario debe elegir una contraseña nueva antes de usar el panel? */
+    public static function mustChangePassword(): bool
+    {
+        $user = self::user();
+
+        return $user !== null && (int) ($user['debe_cambiar_contrasena'] ?? 0) === 1;
+    }
+
     /** Solo mira la sesión, sin consultar la base de datos (para el menú público). */
     public static function hasSession(): bool
     {
         return (int) ($_SESSION['auth_id'] ?? 0) > 0;
     }
 
-    /** Segundos que faltan para poder intentar de nuevo (0 = puede intentar). */
-    public static function lockedFor(): int
+    /** ¿Ese usuario/correo o esta IP están bloqueados por demasiados intentos fallidos? */
+    public static function isLocked(string $usuarioOCorreo): bool
     {
-        $until = (int) ($_SESSION['login_bloqueado_hasta'] ?? 0);
+        $intentos = new IntentoLogin();
 
-        return max(0, $until - time());
+        return $intentos->fallosPorClave(self::clave($usuarioOCorreo), self::VENTANA_MINUTOS) >= self::MAX_POR_USUARIO
+            || $intentos->fallosPorIp(self::ip(), self::VENTANA_MINUTOS) >= self::MAX_POR_IP;
+    }
+
+    public static function lockMinutes(): int
+    {
+        return self::VENTANA_MINUTOS;
     }
 
     /**
@@ -92,43 +111,41 @@ final class Auth
      */
     public static function attempt(string $usuarioOCorreo, string $contrasena): ?array
     {
-        $user = $usuarioOCorreo !== '' ? (new Usuario())->buscarParaLogin($usuarioOCorreo) : null;
+        $intentos = new IntentoLogin();
+        $clave    = self::clave($usuarioOCorreo);
+        $user     = (new Usuario())->buscarParaLogin($usuarioOCorreo);
 
-        if ($user === null || !password_verify($contrasena, (string) $user['contrasena'])) {
-            $intentos = (int) ($_SESSION['login_intentos'] ?? 0) + 1;
-            $_SESSION['login_intentos'] = $intentos;
-            if ($intentos >= self::MAX_INTENTOS) {
-                $_SESSION['login_bloqueado_hasta'] = time() + self::BLOQUEO_SEGUNDOS;
-                $_SESSION['login_intentos'] = 0;
-            }
+        // Siempre se verifica un hash, exista o no el usuario (mismo tiempo de respuesta).
+        $valida = password_verify($contrasena, $user !== null ? (string) $user['contrasena'] : self::HASH_RELLENO);
 
+        if ($user === null || !$valida) {
+            $intentos->registrarFallo($clave, self::ip());
+            $intentos->purgarViejos();
             return null;
         }
 
+        $intentos->limpiar($clave);
         session_regenerate_id(true);
-        unset($_SESSION['login_intentos'], $_SESSION['login_bloqueado_hasta']);
         $_SESSION['auth_id'] = (int) $user['id'];
-        $_SESSION['auth_contrasena_inicial'] = hash_equals(self::CONTRASENA_INICIAL, $contrasena);
         self::$user = false;
 
         return $user;
     }
 
-    /** ¿Sigue usando la contraseña que viene en el archivo SQL? */
-    public static function usesInitialPassword(): bool
-    {
-        return !empty($_SESSION['auth_contrasena_inicial']);
-    }
-
-    public static function forgetInitialPassword(): void
-    {
-        unset($_SESSION['auth_contrasena_inicial']);
-    }
-
     public static function logout(): void
     {
-        unset($_SESSION['auth_id'], $_SESSION['auth_contrasena_inicial']);
+        unset($_SESSION['auth_id']);
         session_regenerate_id(true);
         self::$user = false;
+    }
+
+    private static function clave(string $usuarioOCorreo): string
+    {
+        return mb_substr(mb_strtolower(trim($usuarioOCorreo)), 0, 150);
+    }
+
+    private static function ip(): string
+    {
+        return mb_substr((string) ($_SERVER['REMOTE_ADDR'] ?? '0.0.0.0'), 0, 45);
     }
 }

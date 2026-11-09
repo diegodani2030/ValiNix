@@ -257,12 +257,30 @@ grep -q 'value="admin"' "$TMP/login-bad.html" || fail "el login fallido debería
 r=$(apost "$AJAR" /login --data-urlencode "usuario=admin" --data-urlencode "contrasena=valinix2026")
 [ "$r" = "303 $BASE/login" ] || fail "login sin token CSRF debería rechazarse (fue: $r)"
 r=$(login "$AJAR" admin@valinix.software valinix2026)
-[ "$r" = "303 $BASE/admin" ] || fail "login correcto (con el correo) debería entrar a /admin (fue: $r)"
-[ "$(afetch "$AJAR" /admin "$TMP/dash.html")" = 200 ] || fail "/admin no carga con sesión"
-grep -q 'Bienvenido, Administrador ValiNix.' "$TMP/dash.html" || fail "falta el saludo después de iniciar sesión"
-grep -q 'contraseña inicial' "$TMP/dash.html" || fail "falta el aviso de contraseña inicial"
+[ "$r" = "303 $BASE/admin/cuenta" ] || fail "con la contraseña inicial el login debería llevar a Mi cuenta (fue: $r)"
+afetch "$AJAR" /admin/cuenta "$TMP/cuenta.html" > /dev/null
+grep -q 'Bienvenido, Administrador ValiNix.' "$TMP/cuenta.html" || fail "falta el saludo después de iniciar sesión"
+grep -q 'elige una contraseña nueva' "$TMP/cuenta.html" || fail "falta el aviso de cambiar la contraseña inicial"
+r=$(curl -s -c "$AJAR" -b "$AJAR" -o /dev/null -w '%{http_code} %{redirect_url}' "$BASE/admin/proyectos")
+[ "$r" = "303 $BASE/admin/cuenta" ] || fail "sin cambiar la contraseña inicial no debería poder usar el panel (fue: $r)"
+TOK=$(atoken "$AJAR")
+r=$(apost "$AJAR" /admin/cuenta --data-urlencode "_token=$TOK" --data-urlencode "nombre=Administrador ValiNix" --data-urlencode "correo=admin@valinix.software")
+[ "$r" = "422 " ] || fail "Mi cuenta sin contraseña nueva debería rechazarse mientras sea obligatorio (fue: $r)"
+r=$(apost "$AJAR" /admin/cuenta --data-urlencode "_token=$TOK" --data-urlencode "nombre=Administrador ValiNix" --data-urlencode "correo=admin@valinix.software" \
+    --data-urlencode "actual=valinix2026" --data-urlencode "contrasena=AdminPrueba2026" --data-urlencode "confirmar=AdminPrueba2026")
+[ "$r" = "303 $BASE/admin/cuenta" ] || fail "cambiar la contraseña inicial debería funcionar (fue: $r)"
+[ "$(afetch "$AJAR" /admin "$TMP/dash.html")" = 200 ] || fail "/admin no carga después de cambiar la contraseña"
+if grep -q 'elige una contraseña nueva' "$TMP/dash.html"; then fail "el aviso debería desaparecer al cambiar la contraseña"; fi
 grep -q 'Mensajes por servicio' "$TMP/dash.html" || fail "el administrador debería ver el resumen de mensajes"
-ok "login: error con datos malos, rechaza sin CSRF, entra con usuario o correo"
+ok "login: error con datos malos, rechaza sin CSRF, entra con usuario o correo y obliga a cambiar la contraseña inicial"
+
+# --- Bloqueo por intentos fallidos (guardado en la base de datos) --------------
+BJAR="$TMP/bloqueo.txt"
+for i in 1 2 3 4 5; do login "$BJAR" "bloqueo-$$" mala > /dev/null; rm -f "$BJAR"; done
+login "$BJAR" "bloqueo-$$" mala > /dev/null
+afetch "$BJAR" /login "$TMP/locked.html" > /dev/null
+grep -q 'Demasiados intentos fallidos' "$TMP/locked.html" || fail "5 intentos fallidos deberían bloquear el usuario aunque se borre la cookie"
+ok "bloqueo tras 5 intentos fallidos, guardado en el servidor (borrar la cookie no lo reinicia)"
 
 # --- Mensajes del contacto (consulta multitabla) --------------------------------
 afetch "$AJAR" /admin/mensajes "$TMP/msgs.html" > /dev/null
@@ -279,7 +297,6 @@ grep -q "$ASUNTO" "$TMP/msgs-read.html" || fail "al abrir el mensaje debería qu
 ok "mensajes: lo enviado en /contacto llega al panel con servicio y plan; buscar, ver y marcar leído"
 
 # --- CRUD de proyectos ----------------------------------------------------------
-TOK=$(atoken "$AJAR")
 r=$(apost "$AJAR" /admin/proyectos/guardar --data-urlencode "_token=$TOK" --data-urlencode "titulo=" \
     --data-urlencode "categoria_id=99" --data-urlencode "descripcion=corta" --data-urlencode "enlace=javascript:alert(1)" --data-urlencode "color=9")
 [ "$r" = "422 " ] || fail "un proyecto inválido debería responder 422 (fue: $r)"
@@ -358,24 +375,24 @@ afetch "$AJAR" /admin/usuarios "$TMP/users2.html" > /dev/null
 grep -q 'No puedes eliminar tu propia cuenta' "$TMP/users2.html" || fail "el administrador no debería poder eliminarse a sí mismo"
 
 r=$(login "$UJAR" "$NUEVO" ClaveSegura123)
-[ "$r" = "303 $BASE/admin" ] || fail "el usuario registrado debería poder iniciar sesión (fue: $r)"
-[ "$(afetch "$UJAR" /admin/proyectos "$TMP/u-proys.html")" = 200 ] || fail "el usuario registrado debería poder consultar proyectos"
-if grep -q 'Nuevo proyecto' "$TMP/u-proys.html"; then fail "el usuario registrado no debería ver el botón de crear"; fi
-for path in /admin/usuarios /admin/mensajes /admin/proyectos/nuevo; do
-    [ "$(afetch "$UJAR" "$path" "$TMP/u-deny.html")" = 403 ] || fail "el usuario registrado no debería entrar a $path"
-done
+[ "$r" = "303 $BASE/admin/cuenta" ] || fail "un usuario creado por el administrador debe cambiar su contraseña al entrar (fue: $r)"
 UTOK=$(atoken "$UJAR")
-r=$(apost "$UJAR" /admin/proyectos/eliminar --data-urlencode "_token=$UTOK" --data-urlencode "id=1")
-[ "${r%% *}" = 403 ] || fail "el usuario registrado no debería poder eliminar (fue: $r)"
-afetch "$UJAR" /admin "$TMP/u-dash.html" > /dev/null
-if grep -q 'Mensajes por servicio' "$TMP/u-dash.html"; then fail "el usuario registrado no debería ver los mensajes"; fi
-
 r=$(apost "$UJAR" /admin/cuenta --data-urlencode "_token=$UTOK" --data-urlencode "nombre=Usuario de Prueba" --data-urlencode "correo=$NUEVO@example.com" \
     --data-urlencode "actual=equivocada" --data-urlencode "contrasena=OtraClave456" --data-urlencode "confirmar=OtraClave456")
 grep -q 'La contraseña actual no es correcta.' "$TMP/post.html" || fail "Mi cuenta debería pedir la contraseña actual correcta"
 r=$(apost "$UJAR" /admin/cuenta --data-urlencode "_token=$UTOK" --data-urlencode "nombre=Usuario Cambiado" --data-urlencode "correo=$NUEVO@example.com" \
     --data-urlencode "actual=ClaveSegura123" --data-urlencode "contrasena=OtraClave456" --data-urlencode "confirmar=OtraClave456")
 [ "$r" = "303 $BASE/admin/cuenta" ] || fail "cambiar la contraseña debería redirigir (fue: $r)"
+[ "$(afetch "$UJAR" /admin/proyectos "$TMP/u-proys.html")" = 200 ] || fail "el usuario registrado debería poder consultar proyectos"
+if grep -q 'Nuevo proyecto' "$TMP/u-proys.html"; then fail "el usuario registrado no debería ver el botón de crear"; fi
+for path in /admin/usuarios /admin/mensajes /admin/proyectos/nuevo; do
+    [ "$(afetch "$UJAR" "$path" "$TMP/u-deny.html")" = 403 ] || fail "el usuario registrado no debería entrar a $path"
+done
+r=$(apost "$UJAR" /admin/proyectos/eliminar --data-urlencode "_token=$UTOK" --data-urlencode "id=1")
+[ "${r%% *}" = 403 ] || fail "el usuario registrado no debería poder eliminar (fue: $r)"
+afetch "$UJAR" /admin "$TMP/u-dash.html" > /dev/null
+if grep -q 'Mensajes por servicio' "$TMP/u-dash.html"; then fail "el usuario registrado no debería ver los mensajes"; fi
+
 r=$(apost "$UJAR" /logout --data-urlencode "_token=$UTOK")
 [ "$r" = "303 $BASE/login" ] || fail "cerrar sesión debería volver a /login (fue: $r)"
 r=$(curl -s -c "$UJAR" -b "$UJAR" -o /dev/null -w '%{http_code} %{redirect_url}' "$BASE/admin")
