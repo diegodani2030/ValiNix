@@ -7,12 +7,14 @@ una página aparte:
 | Página               | URL                     | Controlador                 |
 |----------------------|-------------------------|-----------------------------|
 | Inicio               | `/`                     | `PageController@home`       |
+| Nosotros             | `/nosotros`             | `PageController@about`      |
 | Servicios            | `/servicios`            | `PageController@services`   |
 | Proceso              | `/proceso`              | `PageController@process`    |
 | Proyectos            | `/proyectos`            | `PageController@projects`   |
 | Precios              | `/precios`              | `PageController@pricing`    |
 | Preguntas frecuentes | `/preguntas-frecuentes` | `PageController@faq`        |
 | Contacto             | `/contacto`             | `ContactController@show` / `@store` |
+| Manual de usuario    | `/manual`               | `PageController@manual` (fuera del menú; enlazado desde Nosotros y el footer) |
 
 Sitio publicado: https://valinix.infinityfree.me
 
@@ -48,6 +50,7 @@ app/
     └── errors/404.php
 
 css/  js/  assets/         Archivos estáticos (se sirven directamente)
+assets/docs/               Manual de usuario en PDF
 tests/smoke.sh             Prueba automática del sitio y del formulario
 ```
 
@@ -76,6 +79,8 @@ Los botones de `/precios` llevan a `/contacto?plan=...` y el presupuesto queda p
 | Qué bloques lleva una página            | `app/Views/pages/<página>.php`            |
 | Menú o footer                           | `app/Views/partials/header.php` / `footer.php` |
 | Reglas de validación del formulario     | `app/Models/ContactRequest.php`           |
+| Misión, visión y valores                | `SiteContent::about()`                    |
+| Manual en PDF                           | reemplaza `assets/docs/manual-usuario-valinix.pdf` |
 | Agregar una página nueva                | entrada en `SiteContent::pages()` + ruta en `app/routes.php` + método en `PageController` + vista en `app/Views/pages/` |
 
 ## Probar en local

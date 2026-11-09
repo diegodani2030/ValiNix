@@ -23,6 +23,20 @@ final class PageController extends Controller
         ]);
     }
 
+    /** GET /nosotros */
+    public function about(): void
+    {
+        $this->page('nosotros', 'pages/about', [
+            'about' => SiteContent::about(),
+            'cta'   => [
+                'title'     => '¿Quieres crear algo con nosotros?',
+                'text'      => 'Cuéntanos tu idea y la convertimos en un diseño digital que sorprenda.',
+                'primary'   => ['label' => 'Hablar con ValiNix', 'href' => url('contacto')],
+                'secondary' => ['label' => 'Ver proyectos', 'href' => url('proyectos')],
+            ],
+        ]);
+    }
+
     /** GET /servicios */
     public function services(): void
     {
@@ -62,6 +76,20 @@ final class PageController extends Controller
     {
         $this->page('faq', 'pages/faq', [
             'faqs' => SiteContent::faqs(),
+        ]);
+    }
+
+    /** GET /manual */
+    public function manual(): void
+    {
+        $pdfUrl = asset(SiteContent::manualPdf());
+
+        $this->page('manual', 'pages/manual', [
+            'pdfUrl'        => $pdfUrl,
+            'headerActions' => [
+                ['label' => 'Descargar PDF', 'href' => $pdfUrl, 'variant' => 'accent', 'download' => 'Manual_de_Usuario_ValiNix.pdf'],
+                ['label' => 'Abrir en otra pestaña', 'href' => $pdfUrl, 'variant' => 'ghost', 'newTab' => true],
+            ],
         ]);
     }
 

@@ -825,7 +825,7 @@ section { padding: 110px 0; position: relative; }
     .price-card--featured { transform: none; }
 }
 
-@media (max-width: 860px) {
+@media (max-width: 1100px) {
     .navbar__nav {
         position: fixed;
         top: 0; right: 0;
@@ -912,11 +912,134 @@ section { padding: 110px 0; position: relative; }
 /* Que el formulario no quede debajo del menú fijo al volver de un envío */
 #contactForm { scroll-margin-top: 110px; }
 
-@media (max-width: 860px) {
+@media (max-width: 1100px) {
     .navbar__list a.is-active::after { right: auto; width: 24px; bottom: -4px; }
 }
 
 @media (max-width: 640px) {
     .page-header { padding: 140px 0 24px; }
     .page-header + section { padding-top: 36px; }
+}
+
+
+/* ---------- Nosotros: misión, visión y valores ---------- */
+.identidad__top {
+    display: flex;
+    align-items: center;
+    gap: 28px;
+    margin-bottom: 48px;
+}
+.identidad__logo {
+    flex-shrink: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 120px; height: 120px;
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--border);
+    background: radial-gradient(circle at 30% 30%, rgba(var(--accent-rgb), 0.18), transparent 70%), var(--surface-solid);
+}
+
+.identidad__grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 22px;
+}
+.identidad-card {
+    position: relative;
+    overflow: hidden;
+    padding: 36px;
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--border);
+    background: linear-gradient(160deg, rgba(var(--accent-rgb), 0.08), rgba(255, 255, 255, 0.01) 55%);
+    transition: transform 0.3s var(--ease), border-color 0.3s var(--ease);
+}
+.identidad-card:hover { transform: translateY(-4px); border-color: rgba(var(--accent-rgb), 0.35); }
+.identidad-card--vision { background: linear-gradient(200deg, rgba(var(--accent-rgb), 0.08), rgba(255, 255, 255, 0.01) 55%); }
+.identidad-card__icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 54px; height: 54px;
+    border-radius: 14px;
+    color: var(--accent);
+    background: rgba(var(--accent-rgb), 0.12);
+    margin-bottom: 20px;
+}
+.identidad-card h3 { font-family: var(--font-display); font-size: 1.4rem; margin-bottom: 12px; }
+.identidad-card p { color: var(--text-dim); }
+
+.identidad__valores-title {
+    font-family: var(--font-display);
+    font-size: 1.5rem;
+    margin: 70px 0 24px;
+}
+.valores-grid {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 16px;
+}
+.valor-card {
+    padding: 24px;
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border);
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.03), rgba(255, 255, 255, 0));
+    transition: transform 0.3s var(--ease), border-color 0.3s var(--ease);
+}
+.valor-card:hover { transform: translateY(-4px); border-color: rgba(var(--accent-rgb), 0.35); }
+.valor-card__num {
+    display: block;
+    font-family: var(--font-mono);
+    font-size: 0.8rem;
+    color: var(--accent);
+    margin-bottom: 14px;
+}
+.valor-card h4 { font-family: var(--font-display); font-size: 1.05rem; margin-bottom: 8px; }
+.valor-card p { color: var(--text-dim); font-size: 0.88rem; }
+
+.identidad__manual {
+    display: flex;
+    align-items: center;
+    gap: 18px;
+    flex-wrap: wrap;
+    margin-top: 56px;
+    padding: 24px 28px;
+    border-radius: var(--radius-md);
+    border: 1px dashed var(--border-strong);
+}
+.identidad__manual-icon { color: var(--accent); display: inline-flex; }
+.identidad__manual p { flex: 1; min-width: 220px; color: var(--text-dim); }
+
+/* ---------- Manual de usuario ---------- */
+.manual__frame {
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--border);
+    overflow: hidden;
+    background: var(--surface-solid);
+    box-shadow: var(--shadow-lg);
+}
+.manual__frame iframe {
+    display: block;
+    width: 100%;
+    height: min(85vh, 1100px);
+    border: 0;
+    background: #fff;
+}
+.manual__fallback {
+    margin-top: 16px;
+    color: var(--text-dim);
+    font-size: 0.9rem;
+    text-align: center;
+}
+.manual__fallback a { color: var(--accent); text-decoration: underline; }
+
+@media (max-width: 1024px) {
+    .valores-grid { grid-template-columns: repeat(3, 1fr); }
+}
+@media (max-width: 640px) {
+    .identidad__top { flex-direction: column; align-items: flex-start; gap: 20px; }
+    .identidad__logo { width: 88px; height: 88px; }
+    .identidad__grid, .valores-grid { grid-template-columns: 1fr; }
+    .identidad-card { padding: 28px; }
+    .manual__frame iframe { height: 70vh; }
 }

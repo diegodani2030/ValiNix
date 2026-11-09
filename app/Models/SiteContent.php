@@ -16,7 +16,8 @@ final class SiteContent
     /**
      * Páginas del sitio, en el orden del menú.
      * - path: URL de la página (debe coincidir con app/routes.php)
-     * - eyebrow / heading / lead: encabezado que se muestra arriba de la página
+     * - menu: false para que la página no aparezca en el menú principal
+     * - eyebrow / heading / heading_accent / lead: encabezado que se muestra arriba de la página
      * - summary / icon / cta: tarjeta de la página en la sección "Explora" de la home
      *
      * @return array<string, array<string, string>>
@@ -29,6 +30,16 @@ final class SiteContent
                 'nav'              => 'Inicio',
                 'meta_title'       => 'ValiNix — Diseño y desarrollo web para empresas y emprendedores',
                 'meta_description' => 'En ValiNix creamos páginas web modernas, rápidas y enfocadas en resultados: landing pages, sitios empresariales y catálogos digitales con integración a WhatsApp.',
+            ],
+            'nosotros' => [
+                'path'             => '/nosotros',
+                'nav'              => 'Nosotros',
+                'eyebrow'          => 'Quiénes somos',
+                'heading'          => 'Creatividad que atrapa,',
+                'heading_accent'   => 'diseño que destaca.',
+                'lead'             => 'ValiNix es una empresa colombiana dedicada a ofrecer soluciones tecnológicas para pequeñas empresas y emprendimientos.',
+                'meta_title'       => 'Nosotros — ValiNix',
+                'meta_description' => 'Conoce a ValiNix: nuestra misión, visión y los valores con los que creamos soluciones tecnológicas para pequeñas empresas y emprendimientos.',
             ],
             'servicios' => [
                 'path'             => '/servicios',
@@ -102,7 +113,26 @@ final class SiteContent
                 'meta_title'       => 'Contacto — ValiNix',
                 'meta_description' => 'Solicita una cotización para tu página web. Escríbenos por el formulario o por WhatsApp.',
             ],
+            'manual' => [
+                'path'             => '/manual',
+                'nav'              => 'Manual de usuario',
+                'menu'             => false, // no aparece en el menú principal (se enlaza desde Nosotros y el footer)
+                'eyebrow'          => 'Guía del sistema',
+                'heading'          => 'Manual de',
+                'heading_accent'   => 'usuario',
+                'lead'             => 'Guía práctica para usar ValiNix: acceso, tipos de usuario, formularios, mensajes del sistema y solución de problemas.',
+                'meta_title'       => 'Manual de usuario — ValiNix',
+                'meta_description' => 'Descarga o consulta en línea el manual de usuario de ValiNix.',
+            ],
         ];
+    }
+
+    /** Páginas que aparecen en el menú principal. @return array<string, array<string, string>> */
+    public static function menuPages(): array
+    {
+        return array_filter(self::pages(), static function (array $page): bool {
+            return ($page['menu'] ?? true) !== false;
+        });
     }
 
     /** @return array<string, string> */
@@ -119,6 +149,28 @@ final class SiteContent
         return array_filter(self::pages(), static function (array $page): bool {
             return isset($page['summary']);
         });
+    }
+
+    /** Página /nosotros: misión, visión y valores. @return array<string, mixed> */
+    public static function about(): array
+    {
+        return [
+            'mission' => 'Fusionamos imaginación y estrategia para crear sitios por tu innovación. En ValiNix, el diseño es más que solo estética, es experiencia, impacto y evolución digital.',
+            'vision'  => 'ValiNix quiere ser el motor creativo que convierte ideas en diseños digitales cautivadores donde cada detalle está pensado para sorprender y conectar con nuestros clientes.',
+            'values'  => [
+                ['title' => 'Responsabilidad',   'text' => 'Cumplimos con los compromisos adquiridos con nuestros clientes.'],
+                ['title' => 'Innovación',        'text' => 'Buscamos nuevas formas de mejorar nuestros servicios.'],
+                ['title' => 'Calidad',           'text' => 'Ofrecemos soluciones cuidadas y funcionales.'],
+                ['title' => 'Compromiso',        'text' => 'Trabajamos para satisfacer las necesidades de cada cliente.'],
+                ['title' => 'Trabajo en equipo', 'text' => 'Colaboramos para alcanzar los objetivos del proyecto.'],
+            ],
+        ];
+    }
+
+    /** Manual de usuario en PDF (ruta dentro del sitio). */
+    public static function manualPdf(): string
+    {
+        return 'assets/docs/manual-usuario-valinix.pdf';
     }
 
     /** @return array<int, array<string, mixed>> */

@@ -31,4 +31,5 @@ date_default_timezone_set((string) config('app.timezone', 'America/Bogota'));
 \App\Core\Session::start();
 
 // El menú y el footer se arman con la lista de páginas del modelo.
-\App\Core\View::share('navPages', \App\Models\SiteContent::pages());
+\App\Core\View::share('navPages', \App\Models\SiteContent::menuPages());
+\App\Core\View::share('allPages', \App\Models\SiteContent::pages());

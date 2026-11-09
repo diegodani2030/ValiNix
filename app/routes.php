@@ -11,11 +11,13 @@ use App\Core\Router;
 $router = new Router();
 
 $router->get('/', [PageController::class, 'home']);
+$router->get('/nosotros', [PageController::class, 'about']);
 $router->get('/servicios', [PageController::class, 'services']);
 $router->get('/proceso', [PageController::class, 'process']);
 $router->get('/proyectos', [PageController::class, 'projects']);
 $router->get('/precios', [PageController::class, 'pricing']);
 $router->get('/preguntas-frecuentes', [PageController::class, 'faq']);
+$router->get('/manual', [PageController::class, 'manual']);
 
 $router->get('/contacto', [ContactController::class, 'show']);
 $router->post('/contacto', [ContactController::class, 'store']);

@@ -25,12 +25,14 @@ expect_count() { # patrón archivo cantidad descripción
 # ruta | título esperado | texto del menú activo
 PAGES=(
     "/|ValiNix — Diseño y desarrollo web|Inicio"
+    "/nosotros|Nosotros — ValiNix|Nosotros"
     "/servicios|Servicios — ValiNix|Servicios"
     "/proceso|Cómo trabajamos — ValiNix|Proceso"
     "/proyectos|Proyectos — ValiNix|Proyectos"
     "/precios|Precios y planes — ValiNix|Precios"
     "/preguntas-frecuentes|Preguntas frecuentes — ValiNix|Preguntas frecuentes"
     "/contacto|Contacto — ValiNix|Contacto"
+    "/manual|Manual de usuario — ValiNix|-"
 )
 for entry in "${PAGES[@]}"; do
     IFS='|' read -r path title nav <<< "$entry"
@@ -40,19 +42,26 @@ for entry in "${PAGES[@]}"; do
     grep -q "<title>$title" "$file" || fail "$path no tiene el título '$title'"
     [ "$(head -c 15 "$file")" = '<!DOCTYPE html>' ] || fail "$path no empieza con <!DOCTYPE html>"
     expect_count '<h1[ >]' "$file" 1 "$path debería tener un solo <h1>"
-    expect_count 'class="is-active" aria-current="page">' "$file" 1 "$path debería marcar una sola página activa en el menú"
-    grep -q "class=\"is-active\" aria-current=\"page\">$nav</a>" "$file" || fail "$path no marca '$nav' como activo en el menú"
+    if [ "$nav" = "-" ]; then   # página fuera del menú: nada marcado
+        expect_count 'class="is-active" aria-current="page">' "$file" 0 "$path no está en el menú y no debería marcar nada"
+    else
+        expect_count 'class="is-active" aria-current="page">' "$file" 1 "$path debería marcar una sola página activa en el menú"
+        grep -q "class=\"is-active\" aria-current=\"page\">$nav</a>" "$file" || fail "$path no marca '$nav' como activo en el menú"
+    fi
     if grep -qE 'href="#(inicio|servicios|proceso|proyectos|precios|faq|contacto)"' "$file"; then
         fail "$path aún enlaza a secciones con # en vez de páginas"
     fi
 done
-ok "las 7 páginas responden 200, con su título, un <h1> y el menú activo correcto"
+ok "las 9 páginas responden 200, con su título, un <h1> y el menú activo correcto"
 
 P="$TMP/page_.html"
-for href in /servicios /proceso /proyectos /precios /preguntas-frecuentes /contacto; do
-    grep -q "href=\"$href\"" "$P" || fail "el menú no enlaza a $href"
+NAV="$(sed -n '/<nav class="navbar__nav"/,/<\/nav>/p' "$P")"
+for href in /nosotros /servicios /proceso /proyectos /precios /preguntas-frecuentes /contacto; do
+    echo "$NAV" | grep -q "href=\"$href\"" || fail "el menú no enlaza a $href"
 done
-ok "el menú enlaza a cada página"
+if echo "$NAV" | grep -q 'href="/manual"'; then fail "el manual no debería estar en el menú principal"; fi
+grep -q 'href="/manual"' "$P" || fail "el footer debería enlazar al manual"
+ok "el menú enlaza a cada página (el manual va en el footer)"
 
 # --- Contenido de cada página ---------------------------------------------------
 grep -q 'class="hero"' "$P" || fail "la home no tiene el hero"
@@ -75,6 +84,26 @@ for plan in basico profesional premium; do
 done
 expect_count 'class="faq-item"' "$TMP/page_preguntas-frecuentes.html" 7 "preguntas frecuentes"
 ok "servicios, proceso, proyectos, precios y FAQ muestran su contenido"
+
+N="$TMP/page_nosotros.html"
+grep -q 'Creatividad que atrapa, <span class="text-accent">diseño que destaca.</span>' "$N" || fail "/nosotros no tiene el título con acento"
+grep -q '<h3>Misión</h3>' "$N" || fail "/nosotros no muestra la misión"
+grep -q '<h3>Visión</h3>' "$N" || fail "/nosotros no muestra la visión"
+expect_count 'class="valor-card reveal"' "$N" 5 "valores en /nosotros"
+grep -q 'href="/manual" class="btn btn--ghost">Ver manual de usuario' "$N" || fail "/nosotros no enlaza al manual"
+grep -q '¿Quieres crear algo con nosotros?' "$N" || fail "/nosotros no tiene su llamado a la acción propio"
+ok "nosotros: misión, visión, 5 valores, enlace al manual y CTA propio"
+
+M="$TMP/page_manual.html"
+PDF="$(grep -oE 'src="/assets/docs/manual-usuario-valinix\.pdf\?v=[0-9]+#view=FitH"' "$M" | head -1)"
+[ -n "$PDF" ] || fail "/manual no incrusta el PDF en un iframe"
+grep -q 'download="Manual_de_Usuario_ValiNix.pdf" class="btn btn--accent">Descargar PDF' "$M"     || grep -qE 'class="btn btn--accent" download="Manual_de_Usuario_ValiNix.pdf">Descargar PDF' "$M" || fail "/manual no tiene el botón Descargar PDF"
+grep -q 'target="_blank" rel="noopener">Abrir en otra pestaña' "$M" || fail "/manual no tiene el botón para abrir en otra pestaña"
+grep -q 'class="manual__fallback"' "$M" || fail "/manual no tiene el enlace alternativo de descarga"
+ctype=$(curl -s -o "$TMP/manual.pdf" -w '%{http_code} %{content_type}' "$BASE/assets/docs/manual-usuario-valinix.pdf")
+case "$ctype" in "200 application/pdf"*) ;; *) fail "el PDF no se sirve bien (fue: $ctype)";; esac
+[ "$(head -c 5 "$TMP/manual.pdf")" = '%PDF-' ] || fail "el archivo del manual no es un PDF"
+ok "manual: PDF incrustado, botones de descarga/abrir y el archivo se sirve como application/pdf"
 
 C="$TMP/page_contacto.html"
 grep -q 'id="contactForm"' "$C" || fail "/contacto no tiene el formulario"

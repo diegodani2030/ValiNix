@@ -1,7 +1,7 @@
 <?php
-/** @var array<string, array<string, string>> $navPages Páginas del sitio (SiteContent::pages()). */
+/** @var array<string, array<string, string>> $allPages Todas las páginas del sitio (SiteContent::pages()). */
 
-$quickLinks   = array_intersect_key($navPages, array_flip(['inicio', 'servicios', 'proceso', 'proyectos', 'precios', 'faq']));
+$quickLinks   = array_intersect_key($allPages, array_flip(['inicio', 'nosotros', 'servicios', 'proyectos', 'precios', 'faq', 'manual']));
 $serviceLinks = ['Diseño web', 'Landing pages', 'Sitios empresariales', 'Catálogos digitales', 'SEO y rendimiento'];
 ?>
 <footer class="footer">
